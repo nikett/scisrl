@@ -270,19 +270,3 @@ class MTurk(object):
         assignment_id = assignment.AssignmentId if assignment is not None else assignment_id
         return self.connection.reject_assignment(assignment_id, feedback)
 
-
-class HITDataBatch(object):
-
-    def __init__(self):
-        pass
-
-        self.data = None
-        self.metadata = None
-
-    def save(self):
-        pass
-
-    def load(self):
-        pass
-
-
