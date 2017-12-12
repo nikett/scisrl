@@ -1,0 +1,210 @@
+<html>
+  <head>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/json3/3.3.2/json3.min.js'></script>
+    <!-- end of required libraries -->
+    <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js'></script>
+    <link href='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css' rel='stylesheet'>
+    <style>
+    htitle {font-size: 25px; font-weight: 400; color: #dd0000;}
+    header {font-size: 22px; font-weight: 400; color: #555555;}
+    note {font-size: 22px; font-weight: 400; color: #dd0000;}
+    answer {font-size: 20px; font-weight: 400; color: #000000;}
+    badanswer {font-size: 20px; font-weight: 400; color: #ff0000;}
+    goodanswer {font-size: 20px; font-weight: 400; color: #00dd00;}
+    char {font-size: 20px; font-weight: 400; color: #0000dd;}
+    timew {font-size: 20px; font-weight: 400; color: #00ddff;}
+    obj {font-size: 20px; font-weight: 400; color: #ff00dd;}
+    tab1 { padding-left: 2em; }
+      textarea {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        font-size: 16pt!important;
+		 width: 180px!important;
+ 		 height: 45px!important;
+      }
+      #button-div {
+        margin-bottom: 10px;
+      }
+      #counter {
+        margin: 0 10px;
+        font-size: 20pt;
+        font-weight: bold;
+      }
+      img {
+        height: 200px;
+      }
+      #rules {
+          border-collapse: collapse;
+          width: 100%;
+      }
+      #rules th {
+          padding-top: 12px;
+          padding-bottom: 12px;
+          border: 1px solid #000000;
+          padding: 8px;
+          text-align: center;
+          background-color: #4CAF50;
+          font-size: 20px; font-weight: 400; color: white;
+      }
+      #rules td {
+          border: 1px solid #000000;
+          padding: 8px;
+          font-size: 18px; font-weight: 400; color: black;
+      }
+
+      #examples {
+          border-collapse: collapse;
+      }
+      #examples td {
+          border: 2px solid #888888;
+          background-color: #f8f8f8;
+          padding: 8px;
+          width: 700;
+          vertical-align: top;
+          font-size: 18px; font-weight: 400; color: black;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <htitle>In the given sentences</htitle><br>
+      <htitlesm>1. Mark: objects, object parts, body parts, clothes by clicking on words in a sentence.</htitlesm><br>
+      <htitlesm>2. <b>DO NOT</b> mark characters (like Fred, man, doctor etc.), locations (like room, living room etc.), pronouns (like he, she, it etc.), adjectives (like red, bright etc.)</htitlesm><br>
+      <htitlesm>3. If there are no objects in the sentences, select 'NO OBJECTS'</htitlesm><br>
+    <p>&nbsp;</p>
+    <br>
+    <header>Examples</header>
+    <br>
+
+
+    <table id="examples">
+      <tr>
+      <td>
+          Wilma is standing in the kitchen. <br> She is stirring a <obj>bowl</obj> while scrubbing the <obj>floor</obj> with a <obj>mop</obj>.
+      </td>
+      </tr>
+      <tr>
+      <td>
+          Fred gets excited and grabs a <obj>piece of bread</obj> in the dining room. <br> Then Wilma walks in the room.
+      </td>
+      </tr>
+      <tr>
+      <td>
+          Wilma and the woman in purple <obj>dress</obj> with white <obj>hair</obj> are standing in the living room. <br> The woman in purple <obj>dress</obj> with white <obj>hair</obj> is talking to Wilma.
+      </td>
+      </tr>
+      <tr>
+      <td>
+          Fred and Barney are in the yard. <br> Barney is in a <obj>hole</obj> in the yard holding a <obj>dinosaur bone</obj> in his <obj>mouth</obj>. <br> Fred is standing over him looking at Barney.
+      </td>
+      </tr>
+      <tr>
+          <td>
+              Fred is standing next to a <obj>table</obj> in the room while talking. <br>He has his <obj>hands</obj> on his <obj>hips</obj> and returns them to his <obj>side</obj> while talking.
+          </td>
+      </tr>
+    </table>
+
+    <br>
+    <div class='container-fluid'>
+        <div class='col-lg-4 text-center'>
+          {% include 'simpleamt.html' %}
+         </div>
+    <hr>
+  </div>
+    <script>
+      function not_in_descriptions(word){
+        return descriptions.indexOf(word) == -1;
+      }
+      function record_value(clicked_word){
+        if (not_in_descriptions(clicked_word)){
+          descriptions.push(clicked_word);
+          document.getElementById(clicked_word).style.backgroundColor = '#ff00dd';
+          }
+        else {
+            document.getElementById(clicked_word).style.backgroundColor = '#C0C0C0';
+            var index = descriptions.indexOf(clicked_word);
+            descriptions.splice(index, 1);
+          }
+        }
+        // Define some default input.
+        var DEFAULT_INPUT = [
+        '{{image_id}}'
+        ];
+
+
+        // Descriptions of images, parallel to input.
+        var descriptions = [];
+
+        // Some variables to track state of the HIT.
+        var idx = 0;
+        var enabled = false;
+
+        function main() {
+          // If this is a HIT on AMT, then replace the default input with the real input.
+          input = simpleamt.getInput(DEFAULT_INPUT);
+
+          // Enable the UI if the HIT is not in preview mode.
+          if (!simpleamt.isPreview()) {
+            enable_hit();
+          }
+
+          // Set up the descriptions.
+          // _.each(input, function() { descriptions.push(''); });
+
+          render();
+        }
+
+        // Use the current index to update the image and description
+        function render() {
+          var buttons =  {{formatted_description| safe}}
+            for(var i = 0; i < buttons.length; i++)
+            {
+                document.write('<br>');
+                document.write("<div>");
+                for(var j = 0; j < buttons[i].length; j++)
+                {
+                   var button_id = buttons[i][j] + '_'  +  i + '_'  + j;
+                   document.write("<input type='button' onclick=record_value('" + button_id + "') value='" + buttons[i][j] + "'; id= '" + button_id + "'; />");
+                }
+                document.write("</div>");
+                document.write('<br>')
+
+            }
+            document.write('<br>')
+            document.write('<br>')
+            document.write("<input type='button' onclick=record_value('None') value='NO OBJECTS'; id= 'None'; />");
+            document.getElementById('None').style.backgroundColor = '#ff0000';
+
+
+        }
+
+        // Enable the UI.
+        function enable_hit() {
+          enabled = true;
+
+          // Enable components
+          <!--$('#next-btn').click(function() { set_idx(idx + 1) });-->
+          <!--$('#prev-btn').click(function() { set_idx(idx - 1) });-->
+          $('#setting').prop('disabled', false);
+          $('#submit-btn').prop('disabled', false);
+
+          // Set up submit handler.
+          simpleamt.setupSubmit();
+          $('#submit-btn').click(function() {
+            if (descriptions.length < 1) {
+              alert('Make sure to mark the objects, or select NO OBJECTS if there are none');
+              return false;
+            }
+            var output = {'image_url': input[0], 'description': descriptions}
+            simpleamt.setOutput(output);
+          });
+        }
+        main();
+    </script>
+  </div>
+  </body>
+</html>
