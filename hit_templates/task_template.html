@@ -69,11 +69,14 @@
     </style>
   </head>
   <body>
+    <div class='container-fluid'>
     <div class='container'>
       <htitle>In the given sentences</htitle><br>
-      <htitlesm>1. Mark: objects, object parts, body parts, clothes by clicking on words in a sentence.</htitlesm><br>
-      <htitlesm>2. <b>DO NOT</b> mark characters (like Fred, man, doctor etc.), locations (like room, living room etc.), pronouns (like he, she, it etc.), adjectives (like red, bright etc.)</htitlesm><br>
-      <htitlesm>3. If there are no objects in the sentences, select 'NO OBJECTS'</htitlesm><br>
+      <htitlesm>1. Mark: actions by clicking on words in a sentence: these phrases have to be contiguous words.</htitlesm><br>
+      <htitlesm>2. If there are no meaningful actions in the sentence, select 'There are no actions.'</htitlesm><br>
+      <htitlesm>3. <b>DO NOT</b> mark abstract verbs (e.g., is, defined, etc.), and do not include negations (instead of <obj>do not move</obj>, prefer <obj> move </obj>).
+          <br>Do not mark adjectives unless they are part of the action, e.g. prefer <obj>gets sufficiently cold</obj>
+          instead of <obj>get cold</obj> to avoid skipping over a word in a phrase.</htitlesm><br>
     <p>&nbsp;</p>
     <br>
     <header>Examples</header>
@@ -83,38 +86,44 @@
     <table id="examples">
       <tr>
       <td>
-          Wilma is standing in the kitchen. <br> She is stirring a <obj>bowl</obj> while scrubbing the <obj>floor</obj> with a <obj>mop</obj>.
+          Plants <obj>require</obj> air, water, nutrients, and light in order to <obj>live</obj>
+          and <obj>survive</obj>.
       </td>
       </tr>
       <tr>
       <td>
-          Fred gets excited and grabs a <obj>piece of bread</obj> in the dining room. <br> Then Wilma walks in the room.
+          When a chemical change <obj>takes place</obj>, new substances <obj>are formed</obj>.
       </td>
       </tr>
       <tr>
       <td>
-          Wilma and the woman in purple <obj>dress</obj> with white <obj>hair</obj> are standing in the living room. <br> The woman in purple <obj>dress</obj> with white <obj>hair</obj> is talking to Wilma.
+          When heat <obj>is added</obj> to the water, the molecules <obj>move</obj> faster
+          and their bonds will not <obj>stay</obj> the same.
       </td>
       </tr>
       <tr>
       <td>
-          Fred and Barney are in the yard. <br> Barney is in a <obj>hole</obj> in the yard holding a <obj>dinosaur bone</obj> in his <obj>mouth</obj>. <br> Fred is standing over him looking at Barney.
+          The water molecule <obj>is composed of</obj> two hydrogen atoms , each <obj>linked</obj> by a bond.
       </td>
       </tr>
       <tr>
-          <td>
-              Fred is standing next to a <obj>table</obj> in the room while talking. <br>He has his <obj>hands</obj> on his <obj>hips</obj> and returns them to his <obj>side</obj> while talking.
-          </td>
+      <td>
+        The glass <obj>gets cold</obj> enough to make it possible to <obj>condense</obj> <br>
+          water vapor in the air into tiny droplets that <obj>deposit</obj> on the surface.
+      </td>
       </tr>
     </table>
 
     <br>
-    <div class='container-fluid'>
-        <div class='col-lg-4 text-center'>
-          {% include 'simpleamt.html' %}
-         </div>
-    <hr>
+    <!--<div class='container-fluid'>-->
+        <!--<div class='col-lg-4 text-center'>-->
+          <!--{% include 'simpleamt.html' %}-->
+         <!--</div>-->
+    <!--<hr>-->
   </div>
+    <br><br><hr><br><br>
+    <div class='col-lg-4 text-center'> {% include 'simpleamt.html' %} </div>
+        <br><br>
     <script>
       function not_in_descriptions(word){
         return descriptions.indexOf(word) == -1;
@@ -125,7 +134,7 @@
           document.getElementById(clicked_word).style.backgroundColor = '#ff00dd';
           }
         else {
-            document.getElementById(clicked_word).style.backgroundColor = '#C0C0C0';
+            document.getElementById(clicked_word).style.backgroundColor = '#FFFFFF';
             var index = descriptions.indexOf(clicked_word);
             descriptions.splice(index, 1);
           }
@@ -168,18 +177,16 @@
                 for(var j = 0; j < buttons[i].length; j++)
                 {
                    var button_id = buttons[i][j] + '_'  +  i + '_'  + j;
-                   document.write("<input type='button' onclick=record_value('" + button_id + "') value='" + buttons[i][j] + "'; id= '" + button_id + "'; />");
+                   document.write("<input type='button' onclick=record_value('" + button_id + "') value='" + buttons[i][j] + "' id= '" + button_id + "' />");
+                   <!--document.getElementById("'" + button_id + "'").style.backgroundColor = '#FFFE00';-->
                 }
                 document.write("</div>");
                 document.write('<br>')
 
             }
-            document.write('<br>')
-            document.write('<br>')
-            document.write("<input type='button' onclick=record_value('None') value='NO OBJECTS'; id= 'None'; />");
-            document.getElementById('None').style.backgroundColor = '#ff0000';
 
-
+            document.write("<input type='button' onclick=record_value('None') value='There are no actions.'; id= 'None'; />");
+            document.getElementById('None').style.backgroundColor = '#FFFE00';
         }
 
         // Enable the UI.
@@ -196,7 +203,7 @@
           simpleamt.setupSubmit();
           $('#submit-btn').click(function() {
             if (descriptions.length < 1) {
-              alert('Make sure to mark the objects, or select NO OBJECTS if there are none');
+              alert('Make sure to mark the actions, or select -There are no actions- if there are none');
               return false;
             }
             var output = {'image_url': input[0], 'description': descriptions}
