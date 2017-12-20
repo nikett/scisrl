@@ -122,15 +122,15 @@ def write_task_page(page_html):
         f.write(page_html)
 
 
-def generate_task_page(img_id, formatted_description, template_file='task_template.html'):
+def generate_task_page(img_id, formatted_description, verbids, template_file='task_template.html'):
     env = Environment(loader=FileSystemLoader('hit_templates'))
     template = env.get_template(template_file)
-    page_html = template.render(image_id=img_id, formatted_description=formatted_description)
+    page_html = template.render(image_id=img_id, formatted_description=formatted_description, verbids=verbids)
     page_html = page_html
     return page_html
 
 
-def prepare_hit(global_id, text, static_parameters):
+def prepare_hit(global_id, text, verbids, static_parameters):
     formatted_text = [[word.encode('utf8') for word in sent.split()] for sent in text.split('.')][:-1]
-    question_html = generate_task_page(global_id, formatted_text)
+    question_html = generate_task_page(global_id, formatted_text, verbids)
     return build_hit_params(question_html, static_parameters)

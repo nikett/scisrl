@@ -5,6 +5,8 @@
     <!-- end of required libraries -->
     <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js'></script>
+    <script src='https://www.promisejs.org/polyfills/promise-7.0.4.min.js'></script>
     <link href='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css' rel='stylesheet'>
     <style>
     htitle {font-size: 25px; font-weight: 400; color: #dd0000;}
@@ -66,6 +68,14 @@
           vertical-align: top;
           font-size: 18px; font-weight: 400; color: black;
       }
+
+      .selected {
+        background-color: red;
+      }
+
+      .disabled {
+        color: #ff00dd;
+      }
     </style>
   </head>
   <body>
@@ -124,93 +134,251 @@
     <br><br><hr><br><br>
     <div class='col-lg-4 text-center'> {% include 'simpleamt.html' %} </div>
         <br><br>
+
+      <div class="questions"></div>
     <script>
-      function not_in_descriptions(word){
-        return descriptions.indexOf(word) == -1;
+function not_in_descriptions(word) {
+  return descriptions.indexOf(word) === -1;
+}
+
+// Define some default input.
+var DEFAULT_INPUT = [
+'{{image_id}}'
+];
+
+
+// Descriptions of images, parallel to input.
+var descriptions = [];
+
+// Some variables to track state of the HIT.
+var idx = 0;
+var enabled = false;
+
+function main() {
+  // If this is a HIT on AMT, then replace the default input with the real input.
+  input = simpleamt.getInput(DEFAULT_INPUT);
+
+  // Enable the UI if the HIT is not in preview mode.
+  if (!simpleamt.isPreview()) {
+    enable_hit();
+  }
+
+  // Set up the descriptions.
+  // _.each(input, function() { descriptions.push(''); });
+
+  render();
+}
+
+function record_value(index){
+  if (not_in_descriptions(clicked_word)) {
+    descriptions.push(clicked_word);
+    document.getElementById(clicked_word).style.backgroundColor = '#ff00dd';
+  } else {
+    document.getElementById(clicked_word).style.backgroundColor = '#FFFFFF';
+    var index = descriptions.indexOf(clicked_word);
+    descriptions.splice(index, 1);
+  }
+}
+
+function getSpan($question, tokens, takenIndices) {
+  return new Promise(function(resolve, reject) {
+    var $form = $('<form>');
+    var selected = [];
+
+    tokens.forEach(function(token, index) {
+      var $button = $('<input type="button"/>')
+      $button.val(token);
+      $button.click(function() {
+        $(this).toggleClass('selected');
+
+        if (!_.includes(selected, index)) {
+          selected.splice(_.sortedIndex(selected, index), 0, index);
+        } else {
+          selected.splice(selected.indexOf(index), 1);
+        }
+      });
+
+      if (_.includes(takenIndices, index)) {
+        $button.prop('disabled', true);
+        $button.addClass('disabled');
       }
-      function record_value(clicked_word){
-        if (not_in_descriptions(clicked_word)){
-          descriptions.push(clicked_word);
-          document.getElementById(clicked_word).style.backgroundColor = '#ff00dd';
-          }
-        else {
-            document.getElementById(clicked_word).style.backgroundColor = '#FFFFFF';
-            var index = descriptions.indexOf(clicked_word);
-            descriptions.splice(index, 1);
-          }
-        }
-        // Define some default input.
-        var DEFAULT_INPUT = [
-        '{{image_id}}'
-        ];
 
+      $button.appendTo($form);
+    });
 
-        // Descriptions of images, parallel to input.
-        var descriptions = [];
+    $submitButtons = $('<div class="submit-buttons">').appendTo($form);
 
-        // Some variables to track state of the HIT.
-        var idx = 0;
-        var enabled = false;
-
-        function main() {
-          // If this is a HIT on AMT, then replace the default input with the real input.
-          input = simpleamt.getInput(DEFAULT_INPUT);
-
-          // Enable the UI if the HIT is not in preview mode.
-          if (!simpleamt.isPreview()) {
-            enable_hit();
-          }
-
-          // Set up the descriptions.
-          // _.each(input, function() { descriptions.push(''); });
-
-          render();
+    $('<input type="button" value="Submit"/>')
+      .click(function() {
+        if (selected.length === 0) {
+          return alert('Please select at least one word.');
         }
 
-        // Use the current index to update the image and description
-        function render() {
-          var buttons =  {{formatted_description| safe}}
-            for(var i = 0; i < buttons.length; i++)
-            {
-                document.write('<br>');
-                document.write("<div>");
-                for(var j = 0; j < buttons[i].length; j++)
-                {
-                   var button_id = buttons[i][j] + '_'  +  i + '_'  + j;
-                   document.write("<input type='button' onclick=record_value('" + button_id + "') value='" + buttons[i][j] + "' id= '" + button_id + "' />");
-                   <!--document.getElementById("'" + button_id + "'").style.backgroundColor = '#FFFE00';-->
-                }
-                document.write("</div>");
-                document.write('<br>')
-
-            }
-
-            document.write("<input type='button' onclick=record_value('None') value='There are no actions.'; id= 'None'; />");
-            document.getElementById('None').style.backgroundColor = '#FFFE00';
+        if (!isContiguous(selected)) {
+          return alert('Please select a contiguous span of words.');
         }
 
-        // Enable the UI.
-        function enable_hit() {
-          enabled = true;
+        $form.remove();
+        $question.append('<p>' + getTokens(tokens, selected) + '</p>');
+        resolve(selected);
+      })
+      .appendTo($submitButtons);
 
-          // Enable components
-          <!--$('#next-btn').click(function() { set_idx(idx + 1) });-->
-          <!--$('#prev-btn').click(function() { set_idx(idx - 1) });-->
-          $('#setting').prop('disabled', false);
-          $('#submit-btn').prop('disabled', false);
+    $('<input type="button" value="Invalid"/>')
+      .click(function() {
+        $form.remove();
+        $question.append('<p> N/A </p>');
+        resolve(null);
+      })
+      .appendTo($submitButtons);
 
-          // Set up submit handler.
-          simpleamt.setupSubmit();
-          $('#submit-btn').click(function() {
-            if (descriptions.length < 1) {
-              alert('Make sure to mark the actions, or select -There are no actions- if there are none');
-              return false;
-            }
-            var output = {'image_url': input[0], 'description': descriptions}
-            simpleamt.setOutput(output);
-          });
+    $form.appendTo($question);
+  });
+}
+
+function isContiguous(indices) {
+  if (indices.length <= 1) {
+    return true;
+  }
+
+  for (var i = 1; i < indices.length; i++) {
+    if (indices[i] !== indices[i - 1] + 1) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function questionsForVerb($questions, tokens, verbIndices, verbSpan) {
+  var verb = tokens.slice(verbSpan[0], verbSpan[1]).join(' ');
+
+  var whoIndices, whatIndices, whereIndices, whereFromIndices, whenIndices;
+  var who, what, where, whereFrom, when;
+
+  function askQuestion(prefix, suffix) {
+    var phrase;
+    if (who && what) {
+      phrase = [who, verb, what].join(' ');
+    } else if (who) {
+      phrase = [who, verb].join(' ');
+    } else if (what) {
+      phrase = [what, verb].join(' ');
+    } else {
+      phrase = verb;
+    }
+
+    var $question =  $(
+      '<div><p>' +
+      prefix +
+      ' "' +
+      phrase +
+      '"' +
+      (suffix ? ' ' + suffix : '') +
+      '?</p></div>'
+    ).appendTo($questions);
+    var takenIndices = _.flatten([
+      verbIndices,
+      whoIndices || [],
+      whatIndices || []
+    ]);
+    return getSpan($question, tokens, takenIndices);
+  }
+
+  askQuestion('Who')
+    .then(function(selected) {
+      whoIndices = selected;
+      who = getTokens(tokens, whoIndices);
+
+      return askQuestion('What do');
+    })
+    .then(function(selected) {
+      whatIndices = selected;
+      what = getTokens(tokens, whatIndices);
+
+      return askQuestion('Where do')
+    })
+    .then(function(selected) {
+      whereIndices = selected;
+      where = getTokens(tokens, whereIndices);
+
+      return askQuestion('Where do', 'from');
+    })
+    .then(function(selected) {
+      whereFromIndices = selected;
+      whereFrom = getTokens(tokens, whereFromIndices);
+
+      console.log(verb, who, what, where);
+    })
+
+    .catch(function(error) {
+      console.error(error);
+    });
+}
+
+function getTokens(tokens, indices) {
+  if (_.isEmpty(indices)) {
+    return null;
+  }
+
+  return indices.map(i => tokens[i]).join(' ');
+}
+
+// Use the current index to update the image and description
+function render() {
+  var tokens = {{formatted_description | safe}}[0];
+  var verbSpans = {{verbids}};
+  var verbIndices = _.flatten(verbSpans.map(function(span) {
+    return _.range(span[0], span[1]);
+  }));
+
+  var $questions = $('.questions');
+
+  questionsForVerb($questions, tokens, verbIndices, verbSpans[0]);
+
+  var buttons =  {{formatted_description| safe}}
+    for(var i = 0; i < buttons.length; i++)
+    {
+        document.write('<br>');
+        document.write("<div>");
+        for(var j = 0; j < buttons[i].length; j++)
+        {
+           var button_id = buttons[i][j] + '_'  +  i + '_'  + j;
+           document.write("<input type='button' onclick=record_value('" + button_id + "') value='" + buttons[i][j] + "' id= '" + button_id + "' />");
+           <!--document.getElementById("'" + button_id + "'").style.backgroundColor = '#FFFE00';-->
         }
-        main();
+        document.write("</div>");
+        document.write('<br>')
+
+    }
+
+    document.write("<input type='button' onclick=record_value('None') value='There are no actions.'; id= 'None'; />");
+    document.getElementById('None').style.backgroundColor = '#FFFE00';
+}
+
+// Enable the UI.
+function enable_hit() {
+  enabled = true;
+
+  // Enable components
+  <!--$('#next-btn').click(function() { set_idx(idx + 1) });-->
+  <!--$('#prev-btn').click(function() { set_idx(idx - 1) });-->
+  $('#setting').prop('disabled', false);
+  $('#submit-btn').prop('disabled', false);
+
+  // Set up submit handler.
+  simpleamt.setupSubmit();
+  $('#submit-btn').click(function() {
+    if (descriptions.length < 1) {
+      alert('Make sure to mark the actions, or select -There are no actions- if there are none');
+      return false;
+    }
+    var output = {'image_url': input[0], 'description': descriptions}
+    simpleamt.setOutput(output);
+  });
+}
+
+main();
     </script>
   </div>
   </body>
