@@ -197,14 +197,11 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
   $('<h3>').text(verb.phrase)
     .appendTo($questionContainer);
 
-  var who, what, where, whereFrom, whereTo, when, prereq, outcome;
+  var who, what, where, when, whereFrom, whereTo, input, output;
 
-  function askQuestion(prefix, suffix) {
-    var phrase = getActionPhrase(verb, who, what);
+  function askQuestion(text) {
     var $question = $('<div>').appendTo($questionContainer);
-    $('<p>')
-      .text(prefix + ' "' + phrase + '"' + (suffix ? ' ' + suffix : '') + '?')
-      .appendTo($question);
+    $('<p>').text(text + '?').appendTo($question);
     var takenIndices = _.flatten([
       verbIndices,
       who ? who.indices : [],
@@ -229,18 +226,18 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
         who: who,
         what: what,
         where: where,
+        when: when,
         whereFrom: whereFrom,
         whereTo: whereTo,
-        when: when,
-        prereq: prereq,
-        outcome: outcome
+        input: input,
+        output: output
       }
     });
   }
 
-  return askQuestion('Who').then(function(selected) {
+  return askQuestion('Who ' + getActionPhrase(verb)).then(function(selected) {
     who = selected;
-    return askQuestion('What do');
+    return askQuestion('What do ' + getActionPhrase(verb, who));
   }).then(function(selected) {
     what = selected;
 
@@ -248,31 +245,70 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
       return Promise.reject();
     }
 
-    return askQuestion('Where do')
+    return askQuestion('Where do ' + getActionPhrase(verb, who, what))
   }).then(function(selected) {
     where = selected;
-    return askQuestion('Where do', 'from');
-  }).then(function(selected) {
-    whereFrom = selected;
-    return askQuestion('Where do', 'to');
-  }).then(function(selected) {
-    whereTo = selected;
-    return askQuestion('When');
+    return askQuestion('When do ' + getActionPhrase(verb, who, what));
   }).then(function(selected) {
     when = selected;
-    return askQuestion('What thing is the main pre-requisite for');
-  }).then(function(selected) {
-    prereq = selected;
-    return askQuestion('What thing is the main outcome from');
-  }).then(function(selected) {
-    outcome = selected;
-    return complete();
+
+    return askYesNoQuestion(
+      $questionContainer,
+      'Is anything moved when ' + getActionPhrase(verb, who, what) + '?'
+    ).then(function(yes) {
+      if (!yes) return Promise.resolve();
+
+      return askQuestion('Where is it moved from ').then(function(selected) {
+        whereFrom = selected;
+        return askQuestion('Where is it moved to ');
+      }).then(function(selected) {
+        whereTo = selected;
+        return Promise.resolve();
+      });
+    });
+  }).then(function() {
+    return askYesNoQuestion(
+      $questionContainer,
+      'Is anything produced/created when ' + getActionPhrase(verb, who, what) + '?'
+    ).then(function(yes) {
+      if (!yes) return Promise.resolve();
+
+      return askQuestion('What is the input ').then(function(selected) {
+        input = selected;
+        return askQuestion('What is the output ');
+      }).then(function(selected) {
+        output = selected;
+        return Promise.resolve();
+      });
+    });
   }).catch(function(error) {
     if (error) {
       return Promise.reject(error);
     }
 
     return complete();
+  });
+}
+
+function askYesNoQuestion($parent, text) {
+  return new Promise(function(resolve, reject) {
+    var $container = $('<div>').appendTo($parent);
+
+    $('<span>').text(text).appendTo($container);
+
+    $('<button>').text('Yes').appendTo($container).click(function() {
+      disable();
+      resolve(true);
+    });
+
+    $('<button>').text('No').appendTo($container).click(function() {
+      disable();
+      resolve(false);
+    });
+
+    function disable() {
+      $container.find('button').prop('disabled', true);
+    }
   });
 }
 
