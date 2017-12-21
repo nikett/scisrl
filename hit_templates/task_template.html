@@ -166,7 +166,7 @@ function main() {
   render();
 }
 
-function getSpan($question, tokens, takenIndices) {
+function getSpan($container, tokens, takenIndices) {
   return new Promise(function(resolve, reject) {
     var $form = $('<form>');
     var selected = [];
@@ -205,7 +205,7 @@ function getSpan($question, tokens, takenIndices) {
         }
 
         $form.remove();
-        $question.append('<p>' + getTokens(tokens, selected) + '</p>');
+        $('<p>').text(getTokens(tokens, selected)).appendTo($container);
         resolve(selected);
       })
       .appendTo($submitButtons);
@@ -213,12 +213,12 @@ function getSpan($question, tokens, takenIndices) {
     $('<input type="button" value="Invalid"/>')
       .click(function() {
         $form.remove();
-        $question.append('<p> N/A </p>');
+        $('<p>').text('N/A').appendTo($container);
         resolve(null);
       })
       .appendTo($submitButtons);
 
-    $form.appendTo($question);
+    $form.appendTo($container);
   });
 }
 
@@ -236,15 +236,17 @@ function isContiguous(indices) {
   return true;
 }
 
-function askQuestionsForVerb($questions, tokens, verbIndices, verbSpan) {
+function askQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
   var verb = {
     phrase: tokens.slice(verbSpan[0], verbSpan[1]).join(' '),
     indices: _.range(verbSpan[0], verbSpan[1])
   };
 
-  var $container = $('<div>').attr('id', verb.phrase);
-  $container.appendTo($questions);
-  $('<h3>').text(verb.phrase).appendTo($container);
+  var $questionContainer = $('<div>')
+    .attr('id', verb.phrase)
+    .appendTo($container);
+  $('<h3>').text(verb.phrase)
+    .appendTo($questionContainer);
 
   var who, what, where, whereFrom, whereTo, when, prereq, outcome;
 
@@ -260,7 +262,7 @@ function askQuestionsForVerb($questions, tokens, verbIndices, verbSpan) {
       phrase = joinSpans([verb]);
     }
 
-    var $question = $('<div>').appendTo($container);
+    var $question = $('<div>').appendTo($questionContainer);
     $('<p>')
       .text(prefix + ' "' + phrase + '"' + (suffix ? ' ' + suffix : '') + '?')
       .appendTo($question);
@@ -335,6 +337,20 @@ function askQuestionsForVerb($questions, tokens, verbIndices, verbSpan) {
   });
 }
 
+function askVerbQuestions($container, tokens, verbSpans) {
+  var verbIndices = _.flatten(verbSpans.map(function(span) {
+    return _.range(span[0], span[1]);
+  }));
+
+  return Promise.all(verbSpans.map(function(verbSpan) {
+    return askQuestionsForVerb($container, tokens, verbIndices, verbSpan);
+  }));
+}
+
+function askEventRelationQuestions($container, verbAnswers) {
+  return Promise.resolve({});
+}
+
 function joinSpans(spans) {
   return spans.map(function(span) {
     return span.phrase;
@@ -353,15 +369,13 @@ function getTokens(tokens, indices) {
 function render() {
   var tokens = {{formatted_description | safe}}[0];
   var verbSpans = {{verbids}};
-  var verbIndices = _.flatten(verbSpans.map(function(span) {
-    return _.range(span[0], span[1]);
-  }));
   var $questions = $('.questions');
 
-  Promise.all(verbSpans.map(function(verbSpan) {
-    return askQuestionsForVerb($questions, tokens, verbIndices, verbSpan);
-  })).then(function(answers) {
-    console.log(answers);
+  askVerbQuestions($questions, tokens, verbSpans).then(function(verbAnswers) {
+    console.log(verbAnswers);
+    return askEventRelationQuestions($questions, verbAnswers);
+  }).then(function(eventRelationAnswers) {
+    console.log(eventRelationAnswers);
   }).catch(function(error) {
     console.error(error);
   });
