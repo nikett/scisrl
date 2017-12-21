@@ -136,34 +136,6 @@
       <div class="questions"></div>
     <script>
 
-var ENABLES = 'enable',
-    ENABLED_BY = 'enabled_by',
-    PREVENTS = 'prevent',
-    PREVENTED_BY = 'prevented_by',
-    NONE = 'none';
-var EVENT_RELATIONS = [
-  {
-    value: ENABLES,
-    text: 'enables'
-  },
-  {
-    value: ENABLED_BY,
-    text: 'is enabled by'
-  },
-  {
-    value: PREVENTS,
-    text: 'prevents'
-  },
-  {
-    value: PREVENTED_BY,
-    text: 'is prevented by'
-  },
-  {
-    value: NONE,
-    text: 'has no effect on'
-  }
-];
-
 function render() {
   var tokens = {{formatted_description | safe}}[0];
   var verbSpans = {{verbids}};
@@ -202,105 +174,15 @@ function askActionRelationQuestions($container, verbAnswers) {
     );
   });
 
-  function getRelation(actionIndex1, actionIndex2) {
-    return new Promise(function(resolve, reject) {
-      var $questionContainer = $('<div>')
-        .appendTo($container);
-
-      $('<span>')
-        .text(actions[actionIndex1])
-        .appendTo($questionContainer);
-
-      var relation;
-      var $relations = radioButtons('relation', EVENT_RELATIONS, function(selected) {
-        relation = selected;
-      }).appendTo($questionContainer);
-
-      $('<span>')
-        .text(actions[actionIndex2])
-        .appendTo($questionContainer);
-
-      $('<button>')
-        .text('Submit')
-        .click(function() {
-          if (!relation) {
-            return alert('Please select a relation between the two actions.');
-          }
-
-          $relations.find('fieldset').prop('disabled', true);
-
-          resolve(relation);
-        })
-        .appendTo($questionContainer);
-    });
-  }
-
   return Promise.all(pairs(actions.length).map(function(indices) {
-    return getRelation(indices[0], indices[1]).then(function(relation) {
+    return askActionRelationQuestion(
+      $container,
+      actions[indices[0]],
+      actions[indices[1]]
+    ).then(function(relation) {
       return Promise.resolve(canonicalizeRelation(indices, relation));
     });
   }));
-}
-
-function radioButtons(name, options, onChange) {
-  var $form = $('<form>');
-  var $fieldSet = $('<fieldset>').appendTo($form);
-
-  options.forEach(function(option) {
-    radioButton(name, option.value, option.text)
-      .appendTo($fieldSet)
-      .find('input')
-      .change(function() {
-        if ($(this).prop('checked')) {
-          onChange(option.value);
-        }
-      });
-  });
-
-  return $form;
-}
-
-function radioButton(name, value, text) {
-  var $label = $('<label>')
-  $('<input>')
-    .attr('type', 'radio')
-    .attr('name', name)
-    .attr('value', value)
-    .appendTo($label);
-  $('<span>')
-    .text(text)
-    .appendTo($label);
-  return $label;
-}
-
-function pairs(n) {
-  var pairs = [];
-  for (var i = 0; i < n - 1; i++) {
-    for (var j = i + 1; j < n; j++) {
-      pairs.push([i, j]);
-    }
-  }
-  return pairs;
-}
-
-// 0 ENABLED_BY 1 -> 1 ENABLES 0
-function canonicalizeRelation(indices, relation) {
-  var forwards = !(relation === ENABLED_BY || relation === PREVENTED_BY);
-  var source = forwards ? indices[0] : indices[1];
-  var target = forwards ? indices[1] : indices[0];
-
-  var relationType = relation;
-  if (relation === ENABLED_BY) {
-    relationType = ENABLES;
-  } else if (relation === PREVENTED_BY) {
-    relationType = PREVENTS;
-  }
-
-  return {
-    source: source,
-    target: target,
-    relation: relationType
-  };
 }
 
 function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
@@ -394,6 +276,67 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
   });
 }
 
+function askActionRelationQuestion($parent, action1, action2) {
+  return new Promise(function(resolve, reject) {
+    var $container = $('<div>')
+      .appendTo($parent);
+
+    $('<span>')
+      .text(action1)
+      .appendTo($container);
+
+    var relation;
+    var $relations = radioButtons('relation', EVENT_RELATIONS, function(selected) {
+      relation = selected;
+    }).appendTo($container);
+
+    $('<span>')
+      .text(action2)
+      .appendTo($container);
+
+    $('<button>')
+      .text('Submit')
+      .click(function() {
+        if (!relation) {
+          return alert('Please select a relation between the two actions.');
+        }
+
+        $relations.find('fieldset').prop('disabled', true);
+
+        resolve(relation);
+      })
+      .appendTo($container);
+  });
+}
+
+var ENABLES = 'enable',
+    ENABLED_BY = 'enabled_by',
+    PREVENTS = 'prevent',
+    PREVENTED_BY = 'prevented_by',
+    NONE = 'none';
+var EVENT_RELATIONS = [
+  {
+    value: ENABLES,
+    text: 'enables'
+  },
+  {
+    value: ENABLED_BY,
+    text: 'is enabled by'
+  },
+  {
+    value: PREVENTS,
+    text: 'prevents'
+  },
+  {
+    value: PREVENTED_BY,
+    text: 'is prevented by'
+  },
+  {
+    value: NONE,
+    text: 'has no effect on'
+  }
+];
+
 function getSpan($container, tokens, takenIndices) {
   return new Promise(function(resolve, reject) {
     var $form = $('<form>');
@@ -483,6 +426,67 @@ function getTokens(tokens, indices) {
   }
 
   return indices.map(i => tokens[i]).join(' ');
+}
+
+function radioButtons(name, options, onChange) {
+  var $form = $('<form>');
+  var $fieldSet = $('<fieldset>').appendTo($form);
+
+  options.forEach(function(option) {
+    radioButton(name, option.value, option.text)
+      .appendTo($fieldSet)
+      .find('input')
+      .change(function() {
+        if ($(this).prop('checked')) {
+          onChange(option.value);
+        }
+      });
+  });
+
+  return $form;
+}
+
+function radioButton(name, value, text) {
+  var $label = $('<label>')
+  $('<input>')
+    .attr('type', 'radio')
+    .attr('name', name)
+    .attr('value', value)
+    .appendTo($label);
+  $('<span>')
+    .text(text)
+    .appendTo($label);
+  return $label;
+}
+
+function pairs(n) {
+  var pairs = [];
+  for (var i = 0; i < n - 1; i++) {
+    for (var j = i + 1; j < n; j++) {
+      pairs.push([i, j]);
+    }
+  }
+  return pairs;
+}
+
+// 0 ENABLED_BY 1 -> 1 ENABLES 0
+function canonicalizeRelation(indices, relation) {
+  var forwards = !(relation === ENABLED_BY || relation === PREVENTED_BY);
+  var source = forwards ? indices[0] : indices[1];
+  var target = forwards ? indices[1] : indices[0];
+
+  var relationType = relation;
+  if (relation === ENABLED_BY) {
+    relationType = ENABLES;
+  } else if (relation === PREVENTED_BY) {
+    relationType = PREVENTS;
+  }
+
+  return {
+    source: source,
+    target: target,
+    relation: relationType
+  };
 }
 
 // Define some default input.
