@@ -296,11 +296,32 @@ function askQuestionsForVerb($questions, tokens, verbIndices, verbSpan) {
     });
   }
 
+  function complete() {
+    return Promise.resolve({
+      verb: verb,
+      questions: {
+        who: who,
+        what: what,
+        where: where,
+        whereFrom: whereFrom,
+        whereTo: whereTo,
+        when: when,
+        prereq: prereq,
+        outcome: outcome
+      }
+    });
+  }
+
   return askQuestion('Who').then(function(selected) {
     who = selected;
     return askQuestion('What do');
   }).then(function(selected) {
     what = selected;
+
+    if (!who && !what) {
+      return Promise.reject();
+    }
+
     return askQuestion('Where do')
   }).then(function(selected) {
     where = selected;
@@ -319,19 +340,13 @@ function askQuestionsForVerb($questions, tokens, verbIndices, verbSpan) {
     return askQuestion('What thing is the main outcome from');
   }).then(function(selected) {
     outcome = selected;
-    return Promise.resolve({
-      verb: verb,
-      questions: {
-        who: who,
-        what: what,
-        where: where,
-        whereFrom: whereFrom,
-        whereTo: whereTo,
-        when: when,
-        prereq: prereq,
-        outcome: outcome
-      }
-    });
+    return complete();
+  }).catch(function(error) {
+    if (error) {
+      return Promise.reject(error);
+    }
+
+    return complete();
   });
 }
 
