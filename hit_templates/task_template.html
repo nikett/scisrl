@@ -245,58 +245,96 @@ function askEventRelationQuestions($container, verbAnswers) {
     };
   });
 
-  var ENABLE = 'enable',
-      PREVENT = 'prevent';
+  var ENABLES = 'enable',
+      ENABLED_BY = 'enabled_by',
+      PREVENTS = 'prevent',
+      PREVENTED_BY = 'prevented_by',
+      NONE = 'none';
+  var options = [
+    {
+      value: ENABLES,
+      text: 'enables'
+    },
+    {
+      value: ENABLED_BY,
+      text: 'is enabled by'
+    },
+    {
+      value: PREVENTS,
+      text: 'prevents'
+    },
+    {
+      value: PREVENTED_BY,
+      text: 'is prevented by'
+    },
+    {
+      value: NONE,
+      text: 'has no effect on'
+    }
+  ];
 
-  function getRelation(actionIndex) {
-    var action = actions[actionIndex];
+  function getRelation(actionIndex1, actionIndex2) {
     var $questionContainer = $('<div>')
       .appendTo($container);
-    $('<p>')
-      .text('When "' + action.phrase + '", is any action')
+
+    $('<span>')
+      .text(actions[actionIndex1].phrase)
       .appendTo($questionContainer);
 
-    var $form = $('<form>').appendTo($questionContainer);
-    var $actionForm = $('<form>').appendTo($questionContainer);
+    radioButtons('relation', options, function(value) {
+      console.log(actionIndex1, value, actionIndex2);
+    }).appendTo($questionContainer);
 
-    function relationCheckBox(value, text) {
-      var $container = $('<div>').appendTo($questionContainer);
-      var $checkBox = checkBox(value, text).appendTo($container);
-      var $actionContainer = $('<div>').appendTo($container);
-
-      $checkBox.find('input').change(function() {
-        if ($(this).prop('checked')) {
-          actions.forEach(function(action, index) {
-            if (index === actionIndex) return;
-
-            checkBox(index, action.phrase).appendTo($actionContainer);
-          });
-        } else {
-          $actionContainer.empty();
-        }
-      });
-    }
-
-    relationCheckBox(ENABLE, 'enabled');
-    relationCheckBox(PREVENT, 'prevented');
+    $('<span>')
+      .text(actions[actionIndex2].phrase)
+      .appendTo($questionContainer);
   }
 
-  getRelation(0);
+  pairs(actions.length).forEach(function(indices) {
+    getRelation(indices[0], indices[1]);
+  });
 
-  console.log(actions);
   return Promise.resolve({});
 }
 
-function checkBox(value, text) {
+function radioButtons(name, options, onChange) {
+  var $form = $('<form>');
+
+  options.forEach(function(option) {
+    radioButton(name, option.value, option.text)
+      .appendTo($form)
+      .find('input')
+      .change(function() {
+        if ($(this).prop('checked')) {
+          onChange(option.value);
+        }
+      });
+  });
+
+  return $form;
+}
+
+function radioButton(name, value, text) {
   var $label = $('<label>')
   $('<input>')
-    .attr('type', 'checkbox')
+    .attr('type', 'radio')
+    .attr('name', name)
     .attr('value', value)
     .appendTo($label);
   $('<span>')
     .text(text)
     .appendTo($label);
   return $label;
+}
+
+function pairs(n) {
+  var pairs = [];
+  for (var i = 0; i < n - 1; i++) {
+    for (var j = i + 1; j < n; j++) {
+      pairs.push([i, j]);
+    }
+  }
+  return pairs;
 }
 
 function askQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
