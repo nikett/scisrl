@@ -137,9 +137,6 @@
 
       <div class="questions"></div>
     <script>
-function not_in_descriptions(word) {
-  return descriptions.indexOf(word) === -1;
-}
 
 // Define some default input.
 var DEFAULT_INPUT = [
@@ -167,17 +164,6 @@ function main() {
   // _.each(input, function() { descriptions.push(''); });
 
   render();
-}
-
-function record_value(index){
-  if (not_in_descriptions(clicked_word)) {
-    descriptions.push(clicked_word);
-    document.getElementById(clicked_word).style.backgroundColor = '#ff00dd';
-  } else {
-    document.getElementById(clicked_word).style.backgroundColor = '#FFFFFF';
-    var index = descriptions.indexOf(clicked_word);
-    descriptions.splice(index, 1);
-  }
 }
 
 function getSpan($question, tokens, takenIndices) {
@@ -377,25 +363,6 @@ function render() {
   askQuestionsForVerb($questions, tokens, verbIndices, verbSpans[0]).then(function(answer) {
     console.log(answer);
   });
-
-  var buttons =  {{formatted_description| safe}}
-    for(var i = 0; i < buttons.length; i++)
-    {
-        document.write('<br>');
-        document.write("<div>");
-        for(var j = 0; j < buttons[i].length; j++)
-        {
-           var button_id = buttons[i][j] + '_'  +  i + '_'  + j;
-           document.write("<input type='button' onclick=record_value('" + button_id + "') value='" + buttons[i][j] + "' id= '" + button_id + "' />");
-           <!--document.getElementById("'" + button_id + "'").style.backgroundColor = '#FFFE00';-->
-        }
-        document.write("</div>");
-        document.write('<br>')
-
-    }
-
-    document.write("<input type='button' onclick=record_value('None') value='There are no actions.'; id= 'None'; />");
-    document.getElementById('None').style.backgroundColor = '#FFFE00';
 }
 
 // Enable the UI.
