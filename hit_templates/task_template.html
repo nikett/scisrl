@@ -3,11 +3,9 @@
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/json3/3.3.2/json3.min.js'></script>
     <!-- end of required libraries -->
-    <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js'></script>
     <script src='https://www.promisejs.org/polyfills/promise-7.0.4.min.js'></script>
-    <link href='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css' rel='stylesheet'>
     <style>
     htitle {font-size: 25px; font-weight: 400; color: #dd0000;}
     header {font-size: 22px; font-weight: 400; color: #555555;}
@@ -234,7 +232,71 @@ function askVerbQuestions($container, tokens, verbSpans) {
 }
 
 function askEventRelationQuestions($container, verbAnswers) {
+  var actions = verbAnswers.map(function(answer) {
+    return {
+      verb: answer.verb,
+      who: answer.questions.who,
+      what: answer.questions.what,
+      phrase: getActionPhrase(
+        answer.verb,
+        answer.questions.who,
+        answer.questions.what
+      )
+    };
+  });
+
+  var ENABLE = 'enable',
+      PREVENT = 'prevent';
+
+  function getRelation(actionIndex) {
+    var action = actions[actionIndex];
+    var $questionContainer = $('<div>')
+      .appendTo($container);
+    $('<p>')
+      .text('When "' + action.phrase + '", is any action')
+      .appendTo($questionContainer);
+
+    var $form = $('<form>').appendTo($questionContainer);
+    var $actionForm = $('<form>').appendTo($questionContainer);
+
+    function relationCheckBox(value, text) {
+      var $container = $('<div>').appendTo($questionContainer);
+      var $checkBox = checkBox(value, text).appendTo($container);
+      var $actionContainer = $('<div>').appendTo($container);
+
+      $checkBox.find('input').change(function() {
+        if ($(this).prop('checked')) {
+          actions.forEach(function(action, index) {
+            if (index === actionIndex) return;
+
+            checkBox(index, action.phrase).appendTo($actionContainer);
+          });
+        } else {
+          $actionContainer.empty();
+        }
+      });
+    }
+
+    relationCheckBox(ENABLE, 'enabled');
+    relationCheckBox(PREVENT, 'prevented');
+  }
+
+  getRelation(0);
+
+  console.log(actions);
   return Promise.resolve({});
+}
+
+function checkBox(value, text) {
+  var $label = $('<label>')
+  $('<input>')
+    .attr('type', 'checkbox')
+    .attr('value', value)
+    .appendTo($label);
+  $('<span>')
+    .text(text)
+    .appendTo($label);
+  return $label;
 }
 
 function askQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
@@ -252,17 +314,7 @@ function askQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
   var who, what, where, whereFrom, whereTo, when, prereq, outcome;
 
   function askQuestion(prefix, suffix) {
-    var phrase;
-    if (who && what) {
-      phrase = joinSpans([who, verb, what]);
-    } else if (who) {
-      phrase = joinSpans([who, verb]);
-    } else if (what) {
-      phrase = joinSpans([what, verb]);
-    } else {
-      phrase = joinSpans([verb]);
-    }
-
+    var phrase = getActionPhrase(verb, who, what);
     var $question = $('<div>').appendTo($questionContainer);
     $('<p>')
       .text(prefix + ' "' + phrase + '"' + (suffix ? ' ' + suffix : '') + '?')
@@ -392,6 +444,13 @@ function getSpan($container, tokens, takenIndices) {
 
     $form.appendTo($container);
   });
+}
+
+function getActionPhrase(verb, who, what) {
+  if (who && what) return joinSpans([who, verb, what]);
+  if (who) return joinSpans([who, verb]);
+  if (what) return joinSpans([what, verb]);
+  return joinSpans([verb]);
 }
 
 function joinSpans(spans) {
