@@ -138,102 +138,33 @@
       <div class="questions"></div>
     <script>
 
-// Define some default input.
-var DEFAULT_INPUT = [
-'{{image_id}}'
-];
+function render() {
+  var tokens = {{formatted_description | safe}}[0];
+  var verbSpans = {{verbids}};
+  var $questions = $('.questions');
 
-
-// Descriptions of images, parallel to input.
-var descriptions = [];
-
-// Some variables to track state of the HIT.
-var idx = 0;
-var enabled = false;
-
-function main() {
-  // If this is a HIT on AMT, then replace the default input with the real input.
-  input = simpleamt.getInput(DEFAULT_INPUT);
-
-  // Enable the UI if the HIT is not in preview mode.
-  if (!simpleamt.isPreview()) {
-    enable_hit();
-  }
-
-  // Set up the descriptions.
-  // _.each(input, function() { descriptions.push(''); });
-
-  render();
-}
-
-function getSpan($container, tokens, takenIndices) {
-  return new Promise(function(resolve, reject) {
-    var $form = $('<form>');
-    var selected = [];
-
-    tokens.forEach(function(token, index) {
-      var $button = $('<input type="button"/>')
-      $button.val(token);
-      $button.click(function() {
-        $(this).toggleClass('selected');
-
-        if (!_.includes(selected, index)) {
-          selected.splice(_.sortedIndex(selected, index), 0, index);
-        } else {
-          selected.splice(selected.indexOf(index), 1);
-        }
-      });
-
-      if (_.includes(takenIndices, index)) {
-        $button.prop('disabled', true);
-        $button.addClass('disabled');
-      }
-
-      $button.appendTo($form);
-    });
-
-    $submitButtons = $('<div class="submit-buttons">').appendTo($form);
-
-    $('<input type="button" value="Submit"/>')
-      .click(function() {
-        if (selected.length === 0) {
-          return alert('Please select at least one word.');
-        }
-
-        if (!isContiguous(selected)) {
-          return alert('Please select a contiguous span of words.');
-        }
-
-        $form.remove();
-        $('<p>').text(getTokens(tokens, selected)).appendTo($container);
-        resolve(selected);
-      })
-      .appendTo($submitButtons);
-
-    $('<input type="button" value="Invalid"/>')
-      .click(function() {
-        $form.remove();
-        $('<p>').text('N/A').appendTo($container);
-        resolve(null);
-      })
-      .appendTo($submitButtons);
-
-    $form.appendTo($container);
+  askVerbQuestions($questions, tokens, verbSpans).then(function(verbAnswers) {
+    console.log(verbAnswers);
+    return askEventRelationQuestions($questions, verbAnswers);
+  }).then(function(eventRelationAnswers) {
+    console.log(eventRelationAnswers);
+  }).catch(function(error) {
+    console.error(error);
   });
 }
 
-function isContiguous(indices) {
-  if (indices.length <= 1) {
-    return true;
-  }
+function askVerbQuestions($container, tokens, verbSpans) {
+  var verbIndices = _.flatten(verbSpans.map(function(span) {
+    return _.range(span[0], span[1]);
+  }));
 
-  for (var i = 1; i < indices.length; i++) {
-    if (indices[i] !== indices[i - 1] + 1) {
-      return false;
-    }
-  }
+  return Promise.all(verbSpans.map(function(verbSpan) {
+    return askQuestionsForVerb($container, tokens, verbIndices, verbSpan);
+  }));
+}
 
-  return true;
+function askEventRelationQuestions($container, verbAnswers) {
+  return Promise.resolve({});
 }
 
 function askQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
@@ -337,24 +268,80 @@ function askQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
   });
 }
 
-function askVerbQuestions($container, tokens, verbSpans) {
-  var verbIndices = _.flatten(verbSpans.map(function(span) {
-    return _.range(span[0], span[1]);
-  }));
+function getSpan($container, tokens, takenIndices) {
+  return new Promise(function(resolve, reject) {
+    var $form = $('<form>');
+    var selected = [];
 
-  return Promise.all(verbSpans.map(function(verbSpan) {
-    return askQuestionsForVerb($container, tokens, verbIndices, verbSpan);
-  }));
-}
+    tokens.forEach(function(token, index) {
+      var $button = $('<input type="button"/>')
+      $button.val(token);
+      $button.click(function() {
+        $(this).toggleClass('selected');
 
-function askEventRelationQuestions($container, verbAnswers) {
-  return Promise.resolve({});
+        if (!_.includes(selected, index)) {
+          selected.splice(_.sortedIndex(selected, index), 0, index);
+        } else {
+          selected.splice(selected.indexOf(index), 1);
+        }
+      });
+
+      if (_.includes(takenIndices, index)) {
+        $button.prop('disabled', true);
+        $button.addClass('disabled');
+      }
+
+      $button.appendTo($form);
+    });
+
+    $submitButtons = $('<div class="submit-buttons">').appendTo($form);
+
+    $('<input type="button" value="Submit"/>')
+      .click(function() {
+        if (selected.length === 0) {
+          return alert('Please select at least one word.');
+        }
+
+        if (!isContiguous(selected)) {
+          return alert('Please select a contiguous span of words.');
+        }
+
+        $form.remove();
+        $('<p>').text(getTokens(tokens, selected)).appendTo($container);
+        resolve(selected);
+      })
+      .appendTo($submitButtons);
+
+    $('<input type="button" value="Invalid"/>')
+      .click(function() {
+        $form.remove();
+        $('<p>').text('N/A').appendTo($container);
+        resolve(null);
+      })
+      .appendTo($submitButtons);
+
+    $form.appendTo($container);
+  });
 }
 
 function joinSpans(spans) {
   return spans.map(function(span) {
     return span.phrase;
   }).join(' ');
+}
+
+function isContiguous(indices) {
+  if (indices.length <= 1) {
+    return true;
+  }
+
+  for (var i = 1; i < indices.length; i++) {
+    if (indices[i] !== indices[i - 1] + 1) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function getTokens(tokens, indices) {
@@ -365,20 +352,32 @@ function getTokens(tokens, indices) {
   return indices.map(i => tokens[i]).join(' ');
 }
 
-// Use the current index to update the image and description
-function render() {
-  var tokens = {{formatted_description | safe}}[0];
-  var verbSpans = {{verbids}};
-  var $questions = $('.questions');
+// Define some default input.
+var DEFAULT_INPUT = [
+'{{image_id}}'
+];
 
-  askVerbQuestions($questions, tokens, verbSpans).then(function(verbAnswers) {
-    console.log(verbAnswers);
-    return askEventRelationQuestions($questions, verbAnswers);
-  }).then(function(eventRelationAnswers) {
-    console.log(eventRelationAnswers);
-  }).catch(function(error) {
-    console.error(error);
-  });
+
+// Descriptions of images, parallel to input.
+var descriptions = [];
+
+// Some variables to track state of the HIT.
+var idx = 0;
+var enabled = false;
+
+function main() {
+  // If this is a HIT on AMT, then replace the default input with the real input.
+  input = simpleamt.getInput(DEFAULT_INPUT);
+
+  // Enable the UI if the HIT is not in preview mode.
+  if (!simpleamt.isPreview()) {
+    enable_hit();
+  }
+
+  // Set up the descriptions.
+  // _.each(input, function() { descriptions.push(''); });
+
+  render();
 }
 
 // Enable the UI.
