@@ -169,81 +169,15 @@ function render() {
   var verbSpans = {{verbids}};
   var $questions = $('.questions');
 
-  var verbAnswers = [
-    {
-      "verb": {
-        "phrase": "change",
-        "indices": [
-          10
-        ]
-      },
-      "questions": {
-        "who": null,
-        "what": {
-          "phrase": "the arrangement of particles",
-          "indices": [
-            5,
-            6,
-            7,
-            8
-          ]
-        },
-        "where": null,
-        "whereFrom": null,
-        "whereTo": null,
-        "when": null,
-        "prereq": null,
-        "outcome": null
-      }
-    },
-    {
-      "verb": {
-        "phrase": "stay",
-        "indices": [
-          23
-        ]
-      },
-      "questions": {
-        "who": null,
-        "what": {
-          "phrase": "the mass , number of atoms and number of molecules",
-          "indices": [
-            12,
-            13,
-            14,
-            15,
-            16,
-            17,
-            18,
-            19,
-            20,
-            21
-          ]
-        },
-        "where": null,
-        "whereFrom": null,
-        "whereTo": null,
-        "when": {
-          "phrase": "During a physical change",
-          "indices": [
-            0,
-            1,
-            2,
-            3
-          ]
-        },
-        "prereq": null,
-        "outcome": null
-      }
-    }
-  ];
-
-  /*
-  askVerbQuestions($questions, tokens, verbSpans).then(function(verbAnswers) {
-    console.log(verbAnswers);
-    */
-  askEventRelationQuestions($questions, verbAnswers).then(function(eventRelationAnswers) {
-    console.log(eventRelationAnswers);
+  askVerbQuestions($questions, tokens, verbSpans).then(function(actions) {
+    return askEventRelationQuestions($questions, actions).then(function(actionRelations) {
+      return Promise.resolve({
+        actions: actions,
+        actionRelations: actionRelations
+      });
+    });
+  }).then(function(answers) {
+    console.log(answers);
   }).catch(function(error) {
     console.error(error);
   });
