@@ -136,6 +136,34 @@
       <div class="questions"></div>
     <script>
 
+var ENABLES = 'enable',
+    ENABLED_BY = 'enabled_by',
+    PREVENTS = 'prevent',
+    PREVENTED_BY = 'prevented_by',
+    NONE = 'none';
+var EVENT_RELATIONS = [
+  {
+    value: ENABLES,
+    text: 'enables'
+  },
+  {
+    value: ENABLED_BY,
+    text: 'is enabled by'
+  },
+  {
+    value: PREVENTS,
+    text: 'prevents'
+  },
+  {
+    value: PREVENTED_BY,
+    text: 'is prevented by'
+  },
+  {
+    value: NONE,
+    text: 'has no effect on'
+  }
+];
+
 function render() {
   var tokens = {{formatted_description | safe}}[0];
   var verbSpans = {{verbids}};
@@ -245,56 +273,42 @@ function askEventRelationQuestions($container, verbAnswers) {
     };
   });
 
-  var ENABLES = 'enable',
-      ENABLED_BY = 'enabled_by',
-      PREVENTS = 'prevent',
-      PREVENTED_BY = 'prevented_by',
-      NONE = 'none';
-  var options = [
-    {
-      value: ENABLES,
-      text: 'enables'
-    },
-    {
-      value: ENABLED_BY,
-      text: 'is enabled by'
-    },
-    {
-      value: PREVENTS,
-      text: 'prevents'
-    },
-    {
-      value: PREVENTED_BY,
-      text: 'is prevented by'
-    },
-    {
-      value: NONE,
-      text: 'has no effect on'
-    }
-  ];
-
   function getRelation(actionIndex1, actionIndex2) {
-    var $questionContainer = $('<div>')
-      .appendTo($container);
+    return new Promise(function(resolve, reject) {
+      var $questionContainer = $('<div>')
+        .appendTo($container);
 
-    $('<span>')
-      .text(actions[actionIndex1].phrase)
-      .appendTo($questionContainer);
+      $('<span>')
+        .text(actions[actionIndex1].phrase)
+        .appendTo($questionContainer);
 
-    radioButtons('relation', options, function(value) {
-      console.log(actionIndex1, value, actionIndex2);
-    }).appendTo($questionContainer);
+      var relation;
+      radioButtons('relation', EVENT_RELATIONS, function(selected) {
+        relation = selected;
+      }).appendTo($questionContainer);
 
-    $('<span>')
-      .text(actions[actionIndex2].phrase)
-      .appendTo($questionContainer);
+      $('<span>')
+        .text(actions[actionIndex2].phrase)
+        .appendTo($questionContainer);
+
+      $('<button>')
+        .text('Submit')
+        .click(function() {
+          if (!relation) {
+            return alert('Please select a relation between the two events.');
+          }
+
+          resolve(relation);
+        })
+        .appendTo($questionContainer);
+    });
   }
 
-  pairs(actions.length).forEach(function(indices) {
-    getRelation(indices[0], indices[1]);
-  });
-
-  return Promise.resolve({});
+  return Promise.all(pairs(actions.length).map(function(indices) {
+    return getRelation(indices[0], indices[1]).then(function(relation) {
+      return Promise.resolve(canonicalizeRelation(indices, relation));
+    });
+  }));
 }
 
 function radioButtons(name, options, onChange) {
@@ -335,6 +349,26 @@ function pairs(n) {
     }
   }
   return pairs;
+}
+
+// 0 ENABLED_BY 1 -> 1 ENABLES 0
+function canonicalizeRelation(indices, relation) {
+  var forwards = !(relation === ENABLED_BY || relation === PREVENTED_BY);
+  var source = forwards ? indices[0] : indices[1];
+  var target = forwards ? indices[1] : indices[0];
+
+  var relationType = relation;
+  if (relation === ENABLED_BY) {
+    relationType = ENABLES;
+  } else if (relation === PREVENTED_BY) {
+    relationType = PREVENTS;
+  }
+
+  return {
+    source: source,
+    target: target,
+    relation: relationType
+  };
 }
 
 function askQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
