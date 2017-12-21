@@ -242,6 +242,10 @@ function askQuestionsForVerb($questions, tokens, verbIndices, verbSpan) {
     indices: _.range(verbSpan[0], verbSpan[1])
   };
 
+  var $container = $('<div>').attr('id', verb.phrase);
+  $container.appendTo($questions);
+  $('<h3>').text(verb.phrase).appendTo($container);
+
   var who, what, where, whereFrom, whereTo, when, prereq, outcome;
 
   function askQuestion(prefix, suffix) {
@@ -256,7 +260,7 @@ function askQuestionsForVerb($questions, tokens, verbIndices, verbSpan) {
       phrase = joinSpans([verb]);
     }
 
-    var $question =  $(
+    var $question = $(
       '<div><p>' +
       prefix +
       ' "' +
@@ -264,7 +268,7 @@ function askQuestionsForVerb($questions, tokens, verbIndices, verbSpan) {
       '"' +
       (suffix ? ' ' + suffix : '') +
       '?</p></div>'
-    ).appendTo($questions);
+    ).appendTo($container);
     var takenIndices = _.flatten([
       verbIndices,
       who ? who.indices : [],
@@ -357,11 +361,14 @@ function render() {
   var verbIndices = _.flatten(verbSpans.map(function(span) {
     return _.range(span[0], span[1]);
   }));
-
   var $questions = $('.questions');
 
-  askQuestionsForVerb($questions, tokens, verbIndices, verbSpans[0]).then(function(answer) {
-    console.log(answer);
+  Promise.all(verbSpans.map(function(verbSpan) {
+    return askQuestionsForVerb($questions, tokens, verbIndices, verbSpan);
+  })).then(function(answers) {
+    console.log(answers);
+  }).catch(function(error) {
+    console.error(error);
   });
 }
 
