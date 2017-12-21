@@ -169,8 +169,8 @@ function render() {
   var verbSpans = {{verbids}};
   var $questions = $('.questions');
 
-  askVerbQuestions($questions, tokens, verbSpans).then(function(actions) {
-    return askEventRelationQuestions($questions, actions).then(function(actionRelations) {
+  askActionQuestions($questions, tokens, verbSpans).then(function(actions) {
+    return askActionRelationQuestions($questions, actions).then(function(actionRelations) {
       return Promise.resolve({
         actions: actions,
         actionRelations: actionRelations
@@ -183,17 +183,17 @@ function render() {
   });
 }
 
-function askVerbQuestions($container, tokens, verbSpans) {
+function askActionQuestions($container, tokens, verbSpans) {
   var verbIndices = _.flatten(verbSpans.map(function(span) {
     return _.range(span[0], span[1]);
   }));
 
   return Promise.all(verbSpans.map(function(verbSpan) {
-    return askQuestionsForVerb($container, tokens, verbIndices, verbSpan);
+    return askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan);
   }));
 }
 
-function askEventRelationQuestions($container, verbAnswers) {
+function askActionRelationQuestions($container, verbAnswers) {
   var actions = verbAnswers.map(function(answer) {
     return getActionPhrase(
       answer.verb,
@@ -224,7 +224,7 @@ function askEventRelationQuestions($container, verbAnswers) {
         .text('Submit')
         .click(function() {
           if (!relation) {
-            return alert('Please select a relation between the two events.');
+            return alert('Please select a relation between the two actions.');
           }
 
           $relations.find('fieldset').prop('disabled', true);
@@ -303,7 +303,7 @@ function canonicalizeRelation(indices, relation) {
   };
 }
 
-function askQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
+function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
   var verb = {
     phrase: tokens.slice(verbSpan[0], verbSpan[1]).join(' '),
     indices: _.range(verbSpan[0], verbSpan[1])
