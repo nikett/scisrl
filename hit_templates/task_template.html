@@ -250,22 +250,24 @@ function isContiguous(indices) {
   return true;
 }
 
-function questionsForVerb($questions, tokens, verbIndices, verbSpan) {
-  var verb = tokens.slice(verbSpan[0], verbSpan[1]).join(' ');
+function askQuestionsForVerb($questions, tokens, verbIndices, verbSpan) {
+  var verb = {
+    phrase: tokens.slice(verbSpan[0], verbSpan[1]).join(' '),
+    indices: _.range(verbSpan[0], verbSpan[1])
+  };
 
-  var whoIndices, whatIndices, whereIndices, whereFromIndices, whenIndices;
-  var who, what, where, whereFrom, when;
+  var who, what, where, whereFrom, whereTo, when, prereq, outcome;
 
   function askQuestion(prefix, suffix) {
     var phrase;
     if (who && what) {
-      phrase = [who, verb, what].join(' ');
+      phrase = joinSpans([who, verb, what]);
     } else if (who) {
-      phrase = [who, verb].join(' ');
+      phrase = joinSpans([who, verb]);
     } else if (what) {
-      phrase = [what, verb].join(' ');
+      phrase = joinSpans([what, verb]);
     } else {
-      phrase = verb;
+      phrase = joinSpans([verb]);
     }
 
     var $question =  $(
@@ -279,41 +281,64 @@ function questionsForVerb($questions, tokens, verbIndices, verbSpan) {
     ).appendTo($questions);
     var takenIndices = _.flatten([
       verbIndices,
-      whoIndices || [],
-      whatIndices || []
+      who ? who.indices : [],
+      what ? what.indices : []
     ]);
-    return getSpan($question, tokens, takenIndices);
+    return getSpan($question, tokens, takenIndices).then(function(selectedIndices) {
+      if (_.isEmpty(selectedIndices)) {
+        return Promise.resolve(null);
+      }
+
+      return Promise.resolve({
+        phrase: getTokens(tokens, selectedIndices), 
+        indices: selectedIndices
+      });
+    });
   }
 
-  askQuestion('Who')
-    .then(function(selected) {
-      whoIndices = selected;
-      who = getTokens(tokens, whoIndices);
-
-      return askQuestion('What do');
-    })
-    .then(function(selected) {
-      whatIndices = selected;
-      what = getTokens(tokens, whatIndices);
-
-      return askQuestion('Where do')
-    })
-    .then(function(selected) {
-      whereIndices = selected;
-      where = getTokens(tokens, whereIndices);
-
-      return askQuestion('Where do', 'from');
-    })
-    .then(function(selected) {
-      whereFromIndices = selected;
-      whereFrom = getTokens(tokens, whereFromIndices);
-
-      console.log(verb, who, what, where);
-    })
-
-    .catch(function(error) {
-      console.error(error);
+  return askQuestion('Who').then(function(selected) {
+    who = selected;
+    return askQuestion('What do');
+  }).then(function(selected) {
+    what = selected;
+    return askQuestion('Where do')
+  }).then(function(selected) {
+    where = selected;
+    return askQuestion('Where do', 'from');
+  }).then(function(selected) {
+    whereFrom = selected;
+    return askQuestion('Where do', 'to');
+  }).then(function(selected) {
+    whereTo = selected;
+    return askQuestion('When');
+  }).then(function(selected) {
+    when = selected;
+    return askQuestion('What thing is the main pre-requisite for');
+  }).then(function(selected) {
+    prereq = selected;
+    return askQuestion('What thing is the main outcome from');
+  }).then(function(selected) {
+    outcome = selected;
+    return Promise.resolve({
+      verb: verb,
+      questions: {
+        who: who,
+        what: what,
+        where: where,
+        whereFrom: whereFrom,
+        whereTo: whereTo,
+        when: when,
+        prereq: prereq,
+        outcome: outcome
+      }
     });
+  });
+}
+
+function joinSpans(spans) {
+  return spans.map(function(span) {
+    return span.phrase;
+  }).join(' ');
 }
 
 function getTokens(tokens, indices) {
@@ -334,7 +359,9 @@ function render() {
 
   var $questions = $('.questions');
 
-  questionsForVerb($questions, tokens, verbIndices, verbSpans[0]);
+  askQuestionsForVerb($questions, tokens, verbIndices, verbSpans[0]).then(function(answer) {
+    console.log(answer);
+  });
 
   var buttons =  {{formatted_description| safe}}
     for(var i = 0; i < buttons.length; i++)
