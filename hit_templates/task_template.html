@@ -2,10 +2,11 @@
   <head>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/json3/3.3.2/json3.min.js'></script>
-    <!-- end of required libraries -->
+    <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js'></script>
     <script src='https://www.promisejs.org/polyfills/promise-7.0.4.min.js'></script>
+    <link href='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css' rel='stylesheet'>
     <style>
     htitle {font-size: 25px; font-weight: 400; color: #dd0000;}
     header {font-size: 22px; font-weight: 400; color: #555555;}
@@ -65,6 +66,10 @@
           width: 700;
           vertical-align: top;
           font-size: 18px; font-weight: 400; color: black;
+      }
+
+      .question-header {
+        font-size: 20px;
       }
 
       .selected {
@@ -137,9 +142,14 @@
     <script>
 
 function render() {
-  var tokens = {{formatted_description | safe}}[0];
+  var tokens = {{formatted_description | safe}};
   var verbSpans = {{verbids}};
   var $questions = $('.questions');
+
+  $('<p>')
+    .attr('class', 'question-header')
+    .text(tokens.join(' '))
+    .appendTo($questions);
 
   askActionQuestions($questions, tokens, verbSpans).then(function(actions) {
     return askActionRelationQuestions($questions, actions).then(function(actionRelations) {
