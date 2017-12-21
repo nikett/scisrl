@@ -1,1 +1,4 @@
 mturk_ai2.py
+*.pyc
+.ipynb_checkpoints/
+rendered_html/
