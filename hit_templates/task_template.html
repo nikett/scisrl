@@ -261,16 +261,11 @@ function askVerbQuestions($container, tokens, verbSpans) {
 
 function askEventRelationQuestions($container, verbAnswers) {
   var actions = verbAnswers.map(function(answer) {
-    return {
-      verb: answer.verb,
-      who: answer.questions.who,
-      what: answer.questions.what,
-      phrase: getActionPhrase(
-        answer.verb,
-        answer.questions.who,
-        answer.questions.what
-      )
-    };
+    return getActionPhrase(
+      answer.verb,
+      answer.questions.who,
+      answer.questions.what
+    );
   });
 
   function getRelation(actionIndex1, actionIndex2) {
@@ -279,16 +274,16 @@ function askEventRelationQuestions($container, verbAnswers) {
         .appendTo($container);
 
       $('<span>')
-        .text(actions[actionIndex1].phrase)
+        .text(actions[actionIndex1])
         .appendTo($questionContainer);
 
       var relation;
-      radioButtons('relation', EVENT_RELATIONS, function(selected) {
+      var $relations = radioButtons('relation', EVENT_RELATIONS, function(selected) {
         relation = selected;
       }).appendTo($questionContainer);
 
       $('<span>')
-        .text(actions[actionIndex2].phrase)
+        .text(actions[actionIndex2])
         .appendTo($questionContainer);
 
       $('<button>')
@@ -297,6 +292,8 @@ function askEventRelationQuestions($container, verbAnswers) {
           if (!relation) {
             return alert('Please select a relation between the two events.');
           }
+
+          $relations.find('fieldset').prop('disabled', true);
 
           resolve(relation);
         })
@@ -313,10 +310,11 @@ function askEventRelationQuestions($container, verbAnswers) {
 
 function radioButtons(name, options, onChange) {
   var $form = $('<form>');
+  var $fieldSet = $('<fieldset>').appendTo($form);
 
   options.forEach(function(option) {
     radioButton(name, option.value, option.text)
-      .appendTo($form)
+      .appendTo($fieldSet)
       .find('input')
       .change(function() {
         if ($(this).prop('checked')) {
