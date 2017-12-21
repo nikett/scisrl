@@ -260,15 +260,10 @@ function askQuestionsForVerb($questions, tokens, verbIndices, verbSpan) {
       phrase = joinSpans([verb]);
     }
 
-    var $question = $(
-      '<div><p>' +
-      prefix +
-      ' "' +
-      phrase +
-      '"' +
-      (suffix ? ' ' + suffix : '') +
-      '?</p></div>'
-    ).appendTo($container);
+    var $question = $('<div>').appendTo($container);
+    $('<p>')
+      .text(prefix + ' "' + phrase + '"' + (suffix ? ' ' + suffix : '') + '?')
+      .appendTo($question);
     var takenIndices = _.flatten([
       verbIndices,
       who ? who.indices : [],
