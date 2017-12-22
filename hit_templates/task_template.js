@@ -1,4 +1,6 @@
-function render() {
+main();
+
+function main() {
   var sentence = {{ sentence }};
   var $questions = $('.questions');
 
@@ -29,10 +31,29 @@ function render() {
       });
     });
   }).then(function(answers) {
-    console.log(answers);
+    return submit(answers);
   }).catch(function(error) {
     console.error(error);
   });
+}
+
+function submit(answers) {
+  var url = (
+    getURLParam('turkSubmitTo') +
+    '/mturk/externalSubmit?' +
+    $.param({
+      assignmentId: getURLParam('assignmentId')
+    })
+  );
+
+  var body = 'answerJSON=' + JSON.stringify(answers);
+
+  return Promise.resolve($.post(url, body));
+}
+
+function getURLParam(name) {
+  var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+  return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')) : null;
 }
 
 function askActionQuestions($container, sentence) {
@@ -521,55 +542,3 @@ function canonicalizeRelation(indices, relation) {
     relation: relationType
   };
 }
-
-// Define some default input.
-var DEFAULT_INPUT = [
-'{{image_id}}'
-];
-
-
-// Descriptions of images, parallel to input.
-var descriptions = [];
-
-// Some variables to track state of the HIT.
-var idx = 0;
-var enabled = false;
-
-function main() {
-  // If this is a HIT on AMT, then replace the default input with the real input.
-  input = simpleamt.getInput(DEFAULT_INPUT);
-
-  // Enable the UI if the HIT is not in preview mode.
-  if (!simpleamt.isPreview()) {
-    enable_hit();
-  }
-
-  // Set up the descriptions.
-  // _.each(input, function() { descriptions.push(''); });
-
-  render();
-}
-
-// Enable the UI.
-function enable_hit() {
-  enabled = true;
-
-  // Enable components
-  <!--$('#next-btn').click(function() { set_idx(idx + 1) });-->
-  <!--$('#prev-btn').click(function() { set_idx(idx - 1) });-->
-  $('#setting').prop('disabled', false);
-  $('#submit-btn').prop('disabled', false);
-
-  // Set up submit handler.
-  simpleamt.setupSubmit();
-  $('#submit-btn').click(function() {
-    if (descriptions.length < 1) {
-      alert('Make sure to mark the actions, or select -There are no actions- if there are none');
-      return false;
-    }
-    var output = {'image_url': input[0], 'description': descriptions}
-    simpleamt.setOutput(output);
-  });
-}
-
-main();
