@@ -307,7 +307,7 @@ function askActionRelationQuestion($parent, action1, action2) {
       .appendTo($parent);
 
     $('<span>')
-      .text(action1)
+      .text('When ' + action1 + ', it')
       .appendTo($container);
 
     var relation;
