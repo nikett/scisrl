@@ -9,23 +9,23 @@ timew {font-size: 20px; font-weight: 400; color: #00ddff;}
 obj {font-size: 20px; font-weight: 400; color: #ff00dd;}
 tab1 { padding-left: 2em; }
 textarea {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  font-size: 16pt!important;
-   width: 180px!important;
-   height: 45px!important;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 16pt!important;
+    width: 180px!important;
+    height: 45px!important;
 }
 #button-div {
-  margin-bottom: 10px;
+    margin-bottom: 10px;
 }
 #counter {
-  margin: 0 10px;
-  font-size: 20pt;
-  font-weight: bold;
+    margin: 0 10px;
+    font-size: 20pt;
+    font-weight: bold;
 }
 img {
-  height: 200px;
+    height: 200px;
 }
 #rules {
     border-collapse: collapse;
@@ -59,13 +59,38 @@ img {
 }
 
 .question-header {
-  font-size: 20px;
+    font-size: 20px;
 }
 
-.selected {
-  background-color: red;
+.token-selector {
+    margin: 16px;
 }
 
-.disabled {
-  color: #ff00dd;
+.token-button {
+    padding: 2px 8px;
+    border: 1px solid gray;
+    margin: 2px;
+}
+
+.token-button:disabled {
+    background: #b7b7b7;
+    color: black;
+}
+
+.submit-buttons {
+    margin-top: 8px;
+    margin-left: 2px;
+}
+
+.submit-buttons > button {
+    margin-right: 4px;
+}
+
+.answer {
+    margin-left: 8px;
+    font-style: italic;
+}
+
+.yes-no-buttons > button {
+    margin-left: 4px;
 }

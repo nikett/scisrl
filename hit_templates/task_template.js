@@ -67,18 +67,24 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
   var who, what, where, when, whereFrom, whereTo, input, output;
 
   function askQuestion(text) {
-    var $question = $('<div>').appendTo($questionContainer);
-    $('<p>').text(text + '?').appendTo($question);
+    var $question = $('<p>').appendTo($questionContainer);
+    $('<span>').text(text + '?').appendTo($question);
     var takenIndices = _.flatten([
       verbIndices,
       who ? who.indices : [],
       what ? what.indices : []
     ]);
     return getSpan($question, tokens, takenIndices).then(function(selectedIndices) {
+      var $answer = $('<span>')
+        .attr('class', 'answer')
+        .appendTo($question);
+
       if (_.isEmpty(selectedIndices)) {
+        $answer.text('N/A')
         return Promise.resolve(null);
       }
 
+      $answer.text(getTokens(tokens, selectedIndices));
       return Promise.resolve({
         phrase: getTokens(tokens, selectedIndices), 
         indices: selectedIndices
@@ -125,9 +131,9 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
     ).then(function(yes) {
       if (!yes) return Promise.resolve();
 
-      return askQuestion('Where is it moved from ').then(function(selected) {
+      return askQuestion('• Where is it moved from ').then(function(selected) {
         whereFrom = selected;
-        return askQuestion('Where is it moved to ');
+        return askQuestion('• Where is it moved to ');
       }).then(function(selected) {
         whereTo = selected;
         return Promise.resolve();
@@ -140,9 +146,9 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
     ).then(function(yes) {
       if (!yes) return Promise.resolve();
 
-      return askQuestion('What is the input ').then(function(selected) {
+      return askQuestion('• What is the input ').then(function(selected) {
         input = selected;
-        return askQuestion('What is the output ');
+        return askQuestion('• What is the output ');
       }).then(function(selected) {
         output = selected;
         return Promise.resolve();
@@ -159,22 +165,36 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
 
 function askYesNoQuestion($parent, text) {
   return new Promise(function(resolve, reject) {
-    var $container = $('<div>').appendTo($parent);
+    var $container = $('<p>')
+      .attr('class', 'yes-no-buttons')
+      .appendTo($parent);
 
     $('<span>').text(text).appendTo($container);
 
-    $('<button>').text('Yes').appendTo($container).click(function() {
-      disable();
-      resolve(true);
-    });
+    $('<button>')
+      .text('Yes')
+      .attr('class', 'btn btn-success')
+      .click(function() {
+        finish('Yes');
+        resolve(true);
+      })
+      .appendTo($container);
 
-    $('<button>').text('No').appendTo($container).click(function() {
-      disable();
-      resolve(false);
-    });
+    $('<button>')
+      .text('No')
+      .attr('class', 'btn btn-danger')
+      .click(function() {
+        finish('No');
+        resolve(false);
+      })
+      .appendTo($container);
 
-    function disable() {
-      $container.find('button').prop('disabled', true);
+    function finish(answer) {
+      $container.find('button').remove();
+      $('<span>')
+        .attr('class', 'answer')
+        .text(answer)
+        .appendTo($container);
     }
   });
 }
@@ -242,36 +262,44 @@ var EVENT_RELATIONS = [
 
 function getSpan($container, tokens, takenIndices) {
   return new Promise(function(resolve, reject) {
-    var $form = $('<form>');
+    var $form = $('<div>')
+      .attr('class', 'token-selector')
+      .appendTo($container);
     var selected = [];
 
     tokens.forEach(function(token, index) {
-      var $button = $('<input type="button"/>')
-      $button.val(token);
-      $button.click(function() {
-        $(this).toggleClass('selected');
+      var $button = $('<input>')
+        .attr('type', 'button')
+        .attr('class', 'btn token-button')
+        .val(token)
+        .click(function() {
+          $(this).toggleClass('btn-primary');
 
-        if (!_.includes(selected, index)) {
-          selected.splice(_.sortedIndex(selected, index), 0, index);
-        } else {
-          selected.splice(selected.indexOf(index), 1);
-        }
-      });
+          if (!_.includes(selected, index)) {
+            selected.splice(_.sortedIndex(selected, index), 0, index);
+          } else {
+            selected.splice(selected.indexOf(index), 1);
+          }
+        })
+        .appendTo($form);
 
       if (_.includes(takenIndices, index)) {
-        $button.prop('disabled', true);
-        $button.addClass('disabled');
+        $button
+          .prop('disabled', true)
+          .addClass('disabled');
       }
-
-      $button.appendTo($form);
     });
 
-    $submitButtons = $('<div class="submit-buttons">').appendTo($form);
+    $submitButtons = $('<div>')
+      .attr('class', 'submit-buttons')
+      .appendTo($form);
 
-    $('<input type="button" value="Submit"/>')
+    $('<button>')
+      .text('Submit')
+      .attr('class', 'btn btn-success')
       .click(function() {
         if (selected.length === 0) {
-          return alert('Please select at least one word.');
+          return alert('Please select at least one word. If the question is invalid, press "Invalid".');
         }
 
         if (!isContiguous(selected)) {
@@ -279,20 +307,18 @@ function getSpan($container, tokens, takenIndices) {
         }
 
         $form.remove();
-        $('<p>').text(getTokens(tokens, selected)).appendTo($container);
         resolve(selected);
       })
       .appendTo($submitButtons);
 
-    $('<input type="button" value="Invalid"/>')
+    $('<button>')
+      .text('Invalid')
+      .attr('class', 'btn btn-danger')
       .click(function() {
         $form.remove();
-        $('<p>').text('N/A').appendTo($container);
         resolve(null);
       })
       .appendTo($submitButtons);
-
-    $form.appendTo($container);
   });
 }
 
