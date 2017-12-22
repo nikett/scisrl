@@ -31,24 +31,36 @@ function main() {
       });
     });
   }).then(function(answers) {
-    return submit(answers);
+    console.log(answers);
+    var submitURL = getURLParam('turkSubmitTo') + '/mturk/externalSubmit';
+
+    $('<hr>').appendTo($questions);
+
+    var $submitForm = $('<form>')
+      .attr('method', 'post')
+      .attr('action', submitURL)
+      .appendTo($questions);
+
+    $('<input>')
+      .attr('name', 'assignmentId')
+      .attr('type', 'hidden')
+      .val(getURLParam('assignmentId'))
+      .appendTo($submitForm);
+
+    $('<input>')
+      .attr('name', 'answers')
+      .attr('type', 'hidden')
+      .val(JSON.stringify(answers))
+      .appendTo($submitForm);
+
+    $('<input>')
+      .attr('type', 'submit')
+      .attr('class', 'btn btn-lg btn-success')
+      .attr('value', 'Submit HIT')
+      .appendTo($submitForm);
   }).catch(function(error) {
     console.error(error);
   });
-}
-
-function submit(answers) {
-  var url = (
-    getURLParam('turkSubmitTo') +
-    '/mturk/externalSubmit?' +
-    $.param({
-      assignmentId: getURLParam('assignmentId')
-    })
-  );
-
-  var body = 'answerJSON=' + JSON.stringify(answers);
-
-  return Promise.resolve($.post(url, body));
 }
 
 function getURLParam(name) {
@@ -178,7 +190,7 @@ function askActionQuestionsForVerb($parent, sentence, verb) {
 
       return askSpanQuestion(
         $container,
-        '• Where is it moved from',
+        '- Where is it moved from',
         sentence.tokens,
         sentence.verbs
       ).then(function(selected) {
@@ -186,7 +198,7 @@ function askActionQuestionsForVerb($parent, sentence, verb) {
 
         return askSpanQuestion(
           $container,
-          '• Where is it moved to',
+          '- Where is it moved to',
           sentence.tokens,
           [sentence.verbs, whereFrom]
         );
@@ -204,7 +216,7 @@ function askActionQuestionsForVerb($parent, sentence, verb) {
 
       return askSpanQuestion(
         $container,
-        '• What is the input',
+        '- What is the input',
         sentence.tokens,
         sentence.verbs
       ).then(function(selected) {
@@ -212,7 +224,7 @@ function askActionQuestionsForVerb($parent, sentence, verb) {
 
         return askSpanQuestion(
           $container,
-          '• What is the output',
+          '- What is the output',
           sentence.tokens,
           [sentence.verbs, input]
         );
@@ -300,7 +312,7 @@ function askActionRelationQuestion($parent, action1, action2) {
       .appendTo($container);
 
     $('<button>')
-      .text('Submit')
+      .text('Next')
       .attr('class', 'btn btn-success submit-relations')
       .click(function() {
         if (!relation) {
@@ -425,7 +437,7 @@ function getSpan($container, tokens, takenIndices) {
       .appendTo($form);
 
     $('<button>')
-      .text('Submit')
+      .text('Next')
       .attr('class', 'btn btn-success')
       .click(function() {
         if (selected.length === 0) {
