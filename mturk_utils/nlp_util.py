@@ -29,7 +29,7 @@ def json_resp_from(verb_span, tokenized_sent):
     start, end = verb_span.split('-')
     lemma = lemmatize_vp(' '.join(tokenized_sent[int(start): int(end)]))
     return {
-        'span': "["+start+"-"+end+"]",
+        'span': [start, end],
         'lemma': lemma,
         'present': present_form_of_vp(lemma),
         'past': past_form_of_vp(lemma)
