@@ -122,11 +122,10 @@ def write_task_page(page_html):
         f.write(page_html)
 
 
-def generate_task_page(img_id, formatted_description, verbids, template_file='task_template.html'):
+def generate_task_page(sentence, template_file='task_template.html'):
     env = Environment(loader=FileSystemLoader('hit_templates'))
     template = env.get_template(template_file)
-    page_html = template.render(image_id=img_id, formatted_description=formatted_description, verbids=verbids)
-    page_html = page_html
+    page_html = template.render(sentence=sentence)
     return page_html
 
 
