@@ -338,7 +338,7 @@ function askSpanQuestion($container, text, tokens, takenSpans) {
   var takenIndices = _.flatten(
     _.flatten(takenSpans)
       .filter(function(span) {
-        return _.isArray(span.span) && span.span.length === 2;
+        return span !== null;
       })
       .map(function(span) {
         return _.range(span.span[0], span.span[1]);
