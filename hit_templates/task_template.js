@@ -266,11 +266,12 @@ function getTakenSpans(verbs, who, what) {
 
 function askYesNoQuestion($parent, text) {
   return new Promise(function(resolve, reject) {
-    var $container = $('<p>')
+    var $container = $('<div>')
       .attr('class', 'yes-no-buttons')
       .appendTo($parent);
 
-    $('<span>').text(text + '?').appendTo($container);
+    var $question = $('<p>').appendTo($container);
+    $('<span>').text(text + '?').appendTo($question);
 
     $('<button>')
       .text('Yes')
@@ -295,7 +296,7 @@ function askYesNoQuestion($parent, text) {
       $('<span>')
         .attr('class', 'answer')
         .text(answer)
-        .appendTo($container);
+        .appendTo($question);
     }
   });
 }
