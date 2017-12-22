@@ -18,13 +18,25 @@ function main() {
     .appendTo($questions);
 
   askActionQuestions($questions, sentence).then(function(actions) {
-    if (actions.length > 1) {
+    var validIndices = [];
+    var validActions = actions.filter(function(action, index) {
+      if (!(action.questions.who || action.questions.what)) return false;
+      validIndices.push(index);
+      return true;
+    });
+
+    if (validActions.length > 1) {
       $('<h2>')
         .text('Action Relations')
         .appendTo($questions);
     }
 
-    return askActionRelationQuestions($questions, actions).then(function(actionRelations) {
+    return askActionRelationQuestions($questions, validActions).then(function(actionRelations) {
+      actionRelations.forEach(function(relation) {
+        relation.source = validIndices[relation.source];
+        relation.target = validIndices[relation.target];
+      });
+
       return Promise.resolve({
         actions: actions,
         actionRelations: actionRelations
@@ -32,6 +44,7 @@ function main() {
     });
   }).then(function(answers) {
     console.log(answers);
+
     var submitURL = getURLParam('turkSubmitTo') + '/mturk/externalSubmit';
 
     $('<hr>').appendTo($questions);
