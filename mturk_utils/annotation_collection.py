@@ -6,6 +6,7 @@ import json
 from nltk.tokenize import sent_tokenize
 import PIL.Image as Image
 import requests
+from nlp_util import parse_input
 
 
 from boto.mturk.qualification import PercentAssignmentsApprovedRequirement, Qualifications, Requirement, LocaleRequirement
@@ -129,7 +130,8 @@ def generate_task_page(sentence, template_file='task_template.html'):
     return page_html
 
 
-def prepare_hit(global_id, text, verbids, static_parameters):
-    formatted_text = [[word.encode('utf8') for word in sent.split()] for sent in text.split('.')][:-1]
-    question_html = generate_task_page(global_id, formatted_text, verbids)
+def prepare_hit(global_id, text, verb_spans, static_parameters):
+    # formatted_text = [[word.encode('utf8') for word in sent.split()] for sent in text.split('.')][:-1]
+    formatted_text = parse_input(global_id, text, verb_spans)
+    question_html = generate_task_page(formatted_text)
     return build_hit_params(question_html, static_parameters)
