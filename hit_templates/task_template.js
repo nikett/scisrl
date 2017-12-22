@@ -164,6 +164,8 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
         return Promise.resolve();
       });
     });
+  }).then(function() {
+    return complete();
   }).catch(function(error) {
     if (error) {
       return Promise.reject(error);
