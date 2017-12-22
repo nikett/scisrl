@@ -2,6 +2,10 @@ function render() {
   var sentence = {{ sentence }};
   var $questions = $('.questions');
 
+  $('<h2>')
+    .text('Sentence')
+    .appendTo($questions);
+
   $('<p>')
     .attr('class', 'question-header')
     .text(sentence.tokens.join(' '))
