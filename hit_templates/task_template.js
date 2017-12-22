@@ -8,7 +8,17 @@ function render() {
     .text(tokens.join(' '))
     .appendTo($questions);
 
+  $('<h2>')
+    .text('Actions')
+    .appendTo($questions);
+
   askActionQuestions($questions, tokens, verbSpans).then(function(actions) {
+    if (actions.length > 1) {
+      $('<h2>')
+        .text('Action Relations')
+        .appendTo($questions);
+    }
+
     return askActionRelationQuestions($questions, actions).then(function(actionRelations) {
       return Promise.resolve({
         actions: actions,
@@ -209,9 +219,15 @@ function askActionRelationQuestion($parent, action1, action2) {
       .appendTo($container);
 
     var relation;
-    var $relations = radioButtons('relation', EVENT_RELATIONS, function(selected) {
-      relation = selected;
-    }).appendTo($container);
+    var $relations = $('<span>').appendTo($container);
+    radioButtons(
+      'relation',
+      EVENT_RELATIONS,
+      function(selected) {
+        relation = selected;
+      })
+      .attr('class', 'relation-options')
+      .appendTo($relations);
 
     $('<span>')
       .text(action2)
@@ -219,12 +235,22 @@ function askActionRelationQuestion($parent, action1, action2) {
 
     $('<button>')
       .text('Submit')
+      .attr('class', 'btn btn-success submit-relations')
       .click(function() {
         if (!relation) {
           return alert('Please select a relation between the two actions.');
         }
 
-        $relations.find('fieldset').prop('disabled', true);
+        var relationText = _.find(EVENT_RELATIONS, function(r) {
+          return r.value === relation;
+        }).text;
+
+        $relations.empty();
+        $('<span>')
+          .attr('class', 'answer')
+          .text(relationText)
+          .appendTo($relations);
+        $(this).remove();
 
         resolve(relation);
       })
@@ -256,7 +282,7 @@ var EVENT_RELATIONS = [
   },
   {
     value: NONE,
-    text: 'has no effect on'
+    text: 'does not affect'
   }
 ];
 

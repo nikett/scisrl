@@ -87,10 +87,33 @@ img {
 }
 
 .answer {
-    margin-left: 8px;
+    margin: 0 6px;
     font-style: italic;
 }
 
 .yes-no-buttons > button {
+    margin-left: 4px;
+}
+
+.relation-options {
+    display: inline-block;
+    position: relative;
+    top: 50px;
+    padding: 8px;
+    border: 1px solid black;
+    border-radius: 5px;
+    margin: 0 4px;
+}
+
+.relation-options label {
+    display: block;
+    font-weight: normal;
+}
+
+.relation-options input {
+    margin-right: 4px;
+}
+
+.submit-relations {
     margin-left: 4px;
 }
