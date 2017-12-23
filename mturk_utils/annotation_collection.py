@@ -6,7 +6,7 @@ import json
 from nltk.tokenize import sent_tokenize
 import PIL.Image as Image
 import requests
-from nlp_util import parse_input
+from .nlp_util import parse_input
 
 
 from boto.mturk.qualification import PercentAssignmentsApprovedRequirement, Qualifications, Requirement, LocaleRequirement

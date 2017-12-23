@@ -1,25 +1,42 @@
-function render() {
-  var tokens = {{formatted_description | safe}};
-  var verbSpans = {{verbids}};
+main();
+
+function main() {
+  var sentence = {{ sentence }};
   var $questions = $('.questions');
+
+  $('<h2>')
+    .text('Sentence')
+    .appendTo($questions);
 
   $('<p>')
     .attr('class', 'question-header')
-    .text(tokens.join(' '))
+    .text(sentence.tokens.join(' '))
     .appendTo($questions);
 
   $('<h2>')
     .text('Actions')
     .appendTo($questions);
 
-  askActionQuestions($questions, tokens, verbSpans).then(function(actions) {
-    if (actions.length > 1) {
+  askActionQuestions($questions, sentence).then(function(actions) {
+    var validIndices = [];
+    var validActions = actions.filter(function(action, index) {
+      if (!(action.questions.who || action.questions.what)) return false;
+      validIndices.push(index);
+      return true;
+    });
+
+    if (validActions.length > 1) {
       $('<h2>')
         .text('Action Relations')
         .appendTo($questions);
     }
 
-    return askActionRelationQuestions($questions, actions).then(function(actionRelations) {
+    return askActionRelationQuestions($questions, validActions).then(function(actionRelations) {
+      actionRelations.forEach(function(relation) {
+        relation.source = validIndices[relation.source];
+        relation.target = validIndices[relation.target];
+      });
+
       return Promise.resolve({
         actions: actions,
         actionRelations: actionRelations
@@ -27,18 +44,50 @@ function render() {
     });
   }).then(function(answers) {
     console.log(answers);
+
+    var submitURL = getURLParam('turkSubmitTo') + '/mturk/externalSubmit';
+
+    $('<hr>').appendTo($questions);
+
+    var $submitForm = $('<form>')
+      .attr('method', 'post')
+      .attr('action', submitURL)
+      .appendTo($questions);
+
+    $('<input>')
+      .attr('name', 'assignmentId')
+      .attr('type', 'hidden')
+      .val(getURLParam('assignmentId'))
+      .appendTo($submitForm);
+
+    $('<input>')
+      .attr('name', 'answers')
+      .attr('type', 'hidden')
+      .val(JSON.stringify(answers))
+      .appendTo($submitForm);
+
+    $('<input>')
+      .attr('type', 'submit')
+      .attr('class', 'btn btn-lg btn-success')
+      .attr('value', 'Submit HIT')
+      .appendTo($submitForm);
   }).catch(function(error) {
     console.error(error);
   });
 }
 
-function askActionQuestions($container, tokens, verbSpans) {
-  var verbIndices = _.flatten(verbSpans.map(function(span) {
-    return _.range(span[0], span[1]);
+function getURLParam(name) {
+  var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+  return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')) : null;
+}
+
+function askActionQuestions($container, sentence) {
+  var verbIndices = _.flatten(sentence.verbs.map(function(verb) {
+    return _.range(verb.span[0], verb.span[1]);
   }));
 
-  return Promise.all(verbSpans.map(function(verbSpan) {
-    return askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan);
+  return Promise.all(sentence.verbs.map(function(verb) {
+    return askActionQuestionsForVerb($container, sentence, verb);
   }));
 }
 
@@ -62,45 +111,14 @@ function askActionRelationQuestions($container, verbAnswers) {
   }));
 }
 
-function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
-  var verb = {
-    phrase: tokens.slice(verbSpan[0], verbSpan[1]).join(' '),
-    indices: _.range(verbSpan[0], verbSpan[1])
-  };
-
-  var $questionContainer = $('<div>')
-    .attr('id', verb.phrase)
+function askActionQuestionsForVerb($parent, sentence, verb) {
+  var $container = $('<div>')
+    .attr('id', verb.lemma)
+    .appendTo($parent);
+  $('<h3>').text(verb.lemma)
     .appendTo($container);
-  $('<h3>').text(verb.phrase)
-    .appendTo($questionContainer);
 
   var who, what, where, when, whereFrom, whereTo, input, output;
-
-  function askQuestion(text) {
-    var $question = $('<p>').appendTo($questionContainer);
-    $('<span>').text(text + '?').appendTo($question);
-    var takenIndices = _.flatten([
-      verbIndices,
-      who ? who.indices : [],
-      what ? what.indices : []
-    ]);
-    return getSpan($question, tokens, takenIndices).then(function(selectedIndices) {
-      var $answer = $('<span>')
-        .attr('class', 'answer')
-        .appendTo($question);
-
-      if (_.isEmpty(selectedIndices)) {
-        $answer.text('N/A')
-        return Promise.resolve(null);
-      }
-
-      $answer.text(getTokens(tokens, selectedIndices));
-      return Promise.resolve({
-        phrase: getTokens(tokens, selectedIndices), 
-        indices: selectedIndices
-      });
-    });
-  }
 
   function complete() {
     return Promise.resolve({
@@ -118,9 +136,22 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
     });
   }
 
-  return askQuestion('Who ' + getActionPhrase(verb)).then(function(selected) {
+  return askSpanQuestion(
+    $container,
+    'Who ' + verb.present,
+    sentence.tokens,
+    [sentence.verbs]
+  ).then(function(selected) {
     who = selected;
-    return askQuestion('What do ' + getActionPhrase(verb, who));
+
+    return askSpanQuestion(
+      $container,
+      who ?
+        'What do ' + who.phrase + ' ' + verb.lemma :
+        'What is ' + verb.past,
+      sentence.tokens,
+      [sentence.verbs, who]
+    );
   }).then(function(selected) {
     what = selected;
 
@@ -128,22 +159,62 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
       return Promise.reject();
     }
 
-    return askQuestion('Where do ' + getActionPhrase(verb, who, what))
+    var question;
+    if (who && what) {
+      question = ['Where do', who.phrase, verb.lemma, what.phrase].join(' ');
+    } else if (who) {
+      question = ['Where do', who.phrase, verb.present].join(' ');
+    } else if (what) {
+      question = ['Where is', what.phrase, verb.past].join(' ');
+    }
+
+    return askSpanQuestion(
+      $container,
+      question,
+      sentence.tokens,
+      [sentence.verbs, who, what]
+    );
   }).then(function(selected) {
     where = selected;
-    return askQuestion('When do ' + getActionPhrase(verb, who, what));
+
+    var question;
+    if (who && what) {
+      question = ['When do', who.phrase, verb.lemma, what.phrase].join(' ');
+    } else if (who) {
+      question = ['When do', who.phrase, verb.present].join(' ');
+    } else if (what) {
+      question = ['When is', what.phrase, verb.past].join(' ');
+    }
+
+    return askSpanQuestion(
+      $container,
+      question,
+      sentence.tokens,
+      [sentence.verbs, who, what, where]
+    );
   }).then(function(selected) {
     when = selected;
 
     return askYesNoQuestion(
-      $questionContainer,
-      'Is anything moved when ' + getActionPhrase(verb, who, what) + '?'
+      $container,
+      'Is anything moved when ' + getActionPhrase(verb, who, what)
     ).then(function(yes) {
       if (!yes) return Promise.resolve();
 
-      return askQuestion('• Where is it moved from ').then(function(selected) {
+      return askSpanQuestion(
+        $container,
+        '- Where is it moved from',
+        sentence.tokens,
+        sentence.verbs
+      ).then(function(selected) {
         whereFrom = selected;
-        return askQuestion('• Where is it moved to ');
+
+        return askSpanQuestion(
+          $container,
+          '- Where is it moved to',
+          sentence.tokens,
+          [sentence.verbs, whereFrom]
+        );
       }).then(function(selected) {
         whereTo = selected;
         return Promise.resolve();
@@ -151,14 +222,25 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
     });
   }).then(function() {
     return askYesNoQuestion(
-      $questionContainer,
-      'Is anything produced/created when ' + getActionPhrase(verb, who, what) + '?'
+      $container,
+      'Is anything produced/created when ' + getActionPhrase(verb, who, what)
     ).then(function(yes) {
       if (!yes) return Promise.resolve();
 
-      return askQuestion('• What is the input ').then(function(selected) {
+      return askSpanQuestion(
+        $container,
+        '- What is the input',
+        sentence.tokens,
+        sentence.verbs
+      ).then(function(selected) {
         input = selected;
-        return askQuestion('• What is the output ');
+
+        return askSpanQuestion(
+          $container,
+          '- What is the output',
+          sentence.tokens,
+          [sentence.verbs, input]
+        );
       }).then(function(selected) {
         output = selected;
         return Promise.resolve();
@@ -175,13 +257,21 @@ function askActionQuestionsForVerb($container, tokens, verbIndices, verbSpan) {
   });
 }
 
+function getTakenSpans(verbs, who, what) {
+  var taken = verbs.map(function(verb) {
+    return verb.span;
+  });
+
+}
+
 function askYesNoQuestion($parent, text) {
   return new Promise(function(resolve, reject) {
-    var $container = $('<p>')
+    var $container = $('<div>')
       .attr('class', 'yes-no-buttons')
       .appendTo($parent);
 
-    $('<span>').text(text).appendTo($container);
+    var $question = $('<p>').appendTo($container);
+    $('<span>').text(text + '?').appendTo($question);
 
     $('<button>')
       .text('Yes')
@@ -206,7 +296,7 @@ function askYesNoQuestion($parent, text) {
       $('<span>')
         .attr('class', 'answer')
         .text(answer)
-        .appendTo($container);
+        .appendTo($question);
     }
   });
 }
@@ -217,7 +307,7 @@ function askActionRelationQuestion($parent, action1, action2) {
       .appendTo($parent);
 
     $('<span>')
-      .text(action1)
+      .text('When ' + action1 + ', it')
       .appendTo($container);
 
     var relation;
@@ -236,7 +326,7 @@ function askActionRelationQuestion($parent, action1, action2) {
       .appendTo($container);
 
     $('<button>')
-      .text('Submit')
+      .text('Next')
       .attr('class', 'btn btn-success submit-relations')
       .click(function() {
         if (!relation) {
@@ -288,6 +378,44 @@ var EVENT_RELATIONS = [
   }
 ];
 
+function askSpanQuestion($container, text, tokens, takenSpans) {
+  var $question = $('<p>').appendTo($container);
+  $('<span>').text(text + '?').appendTo($question);
+
+  var takenIndices = _.flatten(
+    _.flatten(takenSpans)
+      .filter(function(span) {
+        return span !== null;
+      })
+      .map(function(span) {
+        return _.range(span.span[0], span.span[1]);
+      })
+  );
+
+
+  return getSpan($question, tokens, takenIndices).then(function(answerSpan) {
+    var $answer = $('<span>')
+      .attr('class', 'answer')
+      .appendTo($question);
+
+    if (_.isEmpty(answerSpan)) {
+      $answer.text('N/A')
+      return Promise.resolve(null);
+    }
+
+    var answerTokens = tokens.slice(answerSpan[0], answerSpan[1]);
+    var answerPhrase = answerTokens.join(' ');
+
+    $answer.text(answerPhrase);
+
+    return Promise.resolve({
+      span: answerSpan,
+      tokens: answerTokens,
+      phrase: answerPhrase
+    });
+  });
+}
+
 function getSpan($container, tokens, takenIndices) {
   return new Promise(function(resolve, reject) {
     var $form = $('<div>')
@@ -323,7 +451,7 @@ function getSpan($container, tokens, takenIndices) {
       .appendTo($form);
 
     $('<button>')
-      .text('Submit')
+      .text('Next')
       .attr('class', 'btn btn-success')
       .click(function() {
         if (selected.length === 0) {
@@ -335,7 +463,7 @@ function getSpan($container, tokens, takenIndices) {
         }
 
         $form.remove();
-        resolve(selected);
+        resolve([selected[0], selected[selected.length - 1] + 1]);
       })
       .appendTo($submitButtons);
 
@@ -351,10 +479,13 @@ function getSpan($container, tokens, takenIndices) {
 }
 
 function getActionPhrase(verb, who, what) {
-  if (who && what) return joinSpans([who, verb, what]);
-  if (who) return joinSpans([who, verb]);
-  if (what) return joinSpans([what, verb]);
-  return joinSpans([verb]);
+  if (who && what) {
+    return [who.phrase, verb.lemma, what.phrase].join(' ');
+  } else if (who) {
+    return [who.phrase, verb.lemma].join(' ');
+  } else if (what) {
+    return [what.phrase, 'is', verb.past].join(' ');
+  }
 }
 
 function joinSpans(spans) {
@@ -375,14 +506,6 @@ function isContiguous(indices) {
   }
 
   return true;
-}
-
-function getTokens(tokens, indices) {
-  if (_.isEmpty(indices)) {
-    return null;
-  }
-
-  return indices.map(i => tokens[i]).join(' ');
 }
 
 function radioButtons(name, options, onChange) {
@@ -445,55 +568,3 @@ function canonicalizeRelation(indices, relation) {
     relation: relationType
   };
 }
-
-// Define some default input.
-var DEFAULT_INPUT = [
-'{{image_id}}'
-];
-
-
-// Descriptions of images, parallel to input.
-var descriptions = [];
-
-// Some variables to track state of the HIT.
-var idx = 0;
-var enabled = false;
-
-function main() {
-  // If this is a HIT on AMT, then replace the default input with the real input.
-  input = simpleamt.getInput(DEFAULT_INPUT);
-
-  // Enable the UI if the HIT is not in preview mode.
-  if (!simpleamt.isPreview()) {
-    enable_hit();
-  }
-
-  // Set up the descriptions.
-  // _.each(input, function() { descriptions.push(''); });
-
-  render();
-}
-
-// Enable the UI.
-function enable_hit() {
-  enabled = true;
-
-  // Enable components
-  <!--$('#next-btn').click(function() { set_idx(idx + 1) });-->
-  <!--$('#prev-btn').click(function() { set_idx(idx - 1) });-->
-  $('#setting').prop('disabled', false);
-  $('#submit-btn').prop('disabled', false);
-
-  // Set up submit handler.
-  simpleamt.setupSubmit();
-  $('#submit-btn').click(function() {
-    if (descriptions.length < 1) {
-      alert('Make sure to mark the actions, or select -There are no actions- if there are none');
-      return false;
-    }
-    var output = {'image_url': input[0], 'description': descriptions}
-    simpleamt.setOutput(output);
-  });
-}
-
-main();
