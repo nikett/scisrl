@@ -120,7 +120,8 @@ def write_task_page(page_html):
     if not os.path.exists(html_dir):
         os.makedirs(html_dir)
     with open(html_out_file, 'w') as f:
-        f.write(page_html)
+        f.write(page_html.encode('utf8'))
+        # f.write(page_html)
 
 
 def generate_task_page(sentence, template_file='task_template.html'):
