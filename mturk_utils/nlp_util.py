@@ -89,7 +89,7 @@ def json_resp_from(verb_span, tokenized_sent):
     start, end = verb_span.split('-')
     lemma = lemmatize_vp(' '.join(tokenized_sent[int(start): int(end)]))
     return {
-        'span': [start, end],
+        'span': [int(start), int(end)],
         'lemma': lemma,
         'present': present_form_of_vp(lemma),
         'past': past_form_of_vp(lemma)
@@ -103,4 +103,6 @@ def parse_input(sent_id, sent, csv_spans):
     for verb_span in str.split(csv_spans, ','):
         verbs.append(json_resp_from(str.strip(verb_span), tokenized_sent))
     data['verbs'] = verbs
-    return "["+json.dumps(data)+"]"  # the js code excepts arr of sent.
+    # the js code expect an obj and so
+    # any attempt to use the dict directly fails with json.dumps(data)
+    return data
