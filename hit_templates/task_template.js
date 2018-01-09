@@ -1,5 +1,6 @@
 var UNDO_TOOLTIP = 'Re-enter answers for this verb.';
 var ACTION_SUBMIT_TOOLTIP = 'Submit answers for this action.';
+var SUBMIT_TOOLTIP = 'Answer all questions before submitting the HIT.';
 
 function main() {
   var sentence = {{ sentence }};
@@ -18,7 +19,44 @@ function main() {
     .text('Actions')
     .appendTo($questions);
 
-  askActionQuestions($questions, sentence).then(function(actions) {
+  var $questionsContainer = $('<div>')
+    .appendTo($questions);
+
+  var submitURL = getURLParam('turkSubmitTo') + '/mturk/externalSubmit';
+
+  $('<hr>').appendTo($questions);
+
+  var $submitForm = $('<form>')
+    .attr('method', 'post')
+    .attr('action', submitURL)
+    .appendTo($questions);
+
+  $('<input>')
+    .attr('name', 'assignmentId')
+    .attr('type', 'hidden')
+    .val(getURLParam('assignmentId'))
+    .appendTo($submitForm);
+
+  var $submitAnswers = $('<input>')
+    .attr('name', 'answers')
+    .attr('type', 'hidden')
+    .appendTo($submitForm);
+
+  var $submitButtonContainer = $('<div>')
+    .attr('class', 'submit-button-container')
+    .attr('data-toggle', 'tooltip')
+    .attr('title', SUBMIT_TOOLTIP)
+    .appendTo($submitForm)
+    .tooltip();
+
+  var $submitButton = $('<input>')
+    .attr('type', 'submit')
+    .attr('class', 'btn btn-lg btn-success submit-button')
+    .attr('value', 'Submit HIT')
+    .prop('disabled', true)
+    .appendTo($submitButtonContainer);
+
+  askActionQuestions($questionsContainer, sentence).then(function(actions) {
     var validIndices = [];
     var validActions = actions.filter(function(action, index) {
       if (!(action.questions.who || action.questions.what)) return false;
@@ -29,10 +67,10 @@ function main() {
     if (validActions.length > 1) {
       $('<h2>')
         .text('Action Relations')
-        .appendTo($questions);
+        .appendTo($questionsContainer);
     }
 
-    return askActionRelationQuestions($questions, validActions).then(function(actionRelations) {
+    return askActionRelationQuestions($questionsContainer, validActions).then(function(actionRelations) {
       actionRelations.forEach(function(relation) {
         relation.source = validIndices[relation.source];
         relation.target = validIndices[relation.target];
@@ -46,32 +84,8 @@ function main() {
       });
     });
   }).then(function(answers) {
-    var submitURL = getURLParam('turkSubmitTo') + '/mturk/externalSubmit';
-
-    $('<hr>').appendTo($questions);
-
-    var $submitForm = $('<form>')
-      .attr('method', 'post')
-      .attr('action', submitURL)
-      .appendTo($questions);
-
-    $('<input>')
-      .attr('name', 'assignmentId')
-      .attr('type', 'hidden')
-      .val(getURLParam('assignmentId'))
-      .appendTo($submitForm);
-
-    $('<input>')
-      .attr('name', 'answers')
-      .attr('type', 'hidden')
-      .val(JSON.stringify(answers))
-      .appendTo($submitForm);
-
-    $('<input>')
-      .attr('type', 'submit')
-      .attr('class', 'btn btn-lg btn-success')
-      .attr('value', 'Submit HIT')
-      .appendTo($submitForm);
+    $submitAnswers.val(JSON.stringify(answers))
+    $submitButton.prop('disabled', false);
   }).catch(function(error) {
     console.error(error);
   });

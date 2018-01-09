@@ -117,3 +117,11 @@ img {
 .submit-relations {
     margin-left: 4px;
 }
+
+.submit-button-container {
+    display: inline-block;
+}
+
+.submit-button-container .btn[disabled] {
+    pointer-events: none;
+}
