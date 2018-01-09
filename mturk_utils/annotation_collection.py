@@ -132,7 +132,10 @@ def generate_task_page(sentence, template_file='task_template.html'):
 
 
 def prepare_hit(global_id, text, verb_spans, static_parameters):
-    # formatted_text = [[word.encode('utf8') for word in sent.split()] for sent in text.split('.')][:-1]
-    formatted_text = parse_input(global_id, text, verb_spans)
-    question_html = generate_task_page(formatted_text)
-    return build_hit_params(question_html, static_parameters)
+    if verb_spans:
+    	formatted_text = parse_input(global_id, text, verb_spans)
+    	question_html = generate_task_page(formatted_text)
+    	return build_hit_params(question_html, static_parameters)
+    else:
+        print "Debug: empty verb spans in:", text  
+        return None

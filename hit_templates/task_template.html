@@ -1,5 +1,5 @@
 <html>
-  <head>
+<head>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/json3/3.3.2/json3.min.js'></script>
     <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js'></script>
@@ -10,65 +10,97 @@
     <link href='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css' rel='stylesheet'>
     <style>
       {% include 'task_template.css' %}
+
+
+
+
     </style>
-  </head>
-  <body>
-    <div class='container-fluid'>
-      <div class='container'>
-        <htitle>In the given sentences</htitle><br>
-        <htitlesm>1. Mark: actions by clicking on words in a sentence: these phrases have to be contiguous words.</htitlesm><br>
-        <htitlesm>2. If there are no meaningful actions in the sentence, select 'There are no actions.'</htitlesm><br>
-        <htitlesm>3. <b>DO NOT</b> mark abstract verbs (e.g., is, defined, etc.), and do not include negations (instead of <obj>do not move</obj>, prefer <obj> move </obj>).
-        <br>Do not mark adjectives unless they are part of the action, e.g. prefer <obj>gets sufficiently cold</obj>
-        instead of <obj>get cold</obj> to avoid skipping over a word in a phrase.</htitlesm><br>
-        <p>&nbsp;</p>
-        <br>
-        <header>Examples</header>
-        <br>
+</head>
+<body>
+<div class='container-fluid'>
+    <div class='container'>
+        <h1>Overview</h1>
+        <p>You are given a science sentence and some questions about actions in the sentence.
+            This task will eventually guide an AI system to understand actions in a sentence. </p>
+        <hr>
+        <h1>A simple example: </h1>
+        <p>Sentence: Leaves <b>absorb</b> water from the soil.</p>
+        <ul>
 
-        <table id="examples">
-          <tr>
-            <td>
-              Plants <obj>require</obj> air, water, nutrients, and light in order to <obj>live</obj>
-              and <obj>survive</obj>.
-            </td>
-          </tr>
-          <tr>
-            <td>
-              When a chemical change <obj>takes place</obj>, new substances <obj>are formed</obj>.
-            </td>
-          </tr>
-          <tr>
-            <td>
-              When heat <obj>is added</obj> to the water, the molecules <obj>move</obj> faster
-              and their bonds will not <obj>stay</obj> the same.
-            </td>
-          </tr>
-          <tr>
-            <td>
-              The water molecule <obj>is composed of</obj> two hydrogen atoms , each <obj>linked</obj> by a bond.
-            </td>
-          </tr>
-          <tr>
-            <td>
-              The glass <obj>gets cold</obj> enough to make it possible to <obj>condense</obj> <br>
-              water vapor in the air into tiny droplets that <obj>deposit</obj> on the surface.
-            </td>
-          </tr>
-        </table>
+            <li>Who absorbs? (this question always asks who the performer of the action is) Answer: <b>Leaves</b></li>
+            <ul>
+                <li>Common mistake: water (ensure that only a performer of the action is marked here.)</li>
+                <li>Another example highlighting mistake: The leaves detach.-- Who detaches? (Incorrect: leaves and correct
+                    answer: Invalid, because the one who detaches the leaves is not evident).
+                </li>
+            </ul>
+
+            <li>What do leaves absorb? (this question is never about the performer.) Answer: <b>water</b></li>
+            <ul>
+                <li>Common mistake: water from the soil (include only the essential information)</li>
+            </ul>
+
+            <li>Where do leaves absorb water? (the physical location where the action happens) Answer: <b>from the
+                soil</b>
+            </li>
+            <ul>
+                <li>Common mistake: soil (include only the essential information but make sure the leading preposition
+                    is included)
+                </li>
+            </ul>
+
+            <li>When do leaves absorb water? (the time or duration when the action happens) Answer: <b>Invalid</b></li>
+            <ul>
+                <li>Common mistake: marking non-time expressions such as other events in the sentence.
+                    Please choose invalid if the answer is not evident from the sentence
+                </li>
+            </ul>
+
+            <li>Is anything moved when leaves absorb water? (think of any physical entity that moved during this action)
+                Answer: <b>Yes</b></li>
+            <ul>
+                <li>Where did it move from? Answer (from the soil)</li>
+                <li>Where did it move to? Answer (Invalid)</li>
+            </ul>
+
+            <li>Is anything produced/created when leaves absorb water? (think of any physical entity that got created)
+                Answer: <b>No</b></li>
+
+        </ul>
+        <p> Note: When a sentence contains multiple actions, there will also be questions about whether an action
+            enables or
+            prevents any other actions.</p>
+
+        <hr>
+        <h1>Guidelines.</h1>
+        <ol>
+            <li>For each action, highlight answer phrases by clicking/unclicking on words.
+                Use your best judgment to choose phrases that are not too long and include only the essential
+                information.
+            </li>
+            <li>Make sure that the answer to the first question is a performer of the action.</li>
+            <li>Ignore any grammatical awkwardness in the questions.</li>
+            <li>Refresh the page if you believe there is a mistake, there is no undo operation.
+                Submit HIT button will appear once you have answered all the questions.</li>
+        </ol>
+
+        <p>Important note: We use test answers to identify bots and abusers.
+            Choosing answers at random may result in having all of your assignments rejected,
+            but so long as you use common sense, these questions are very easy to answer.</p>
 
         <br>
-
         <hr/>
-
         <div class="questions"></div>
-
         <div style="height: 100px;"></div>
-      </div>
-
-      <script>
-        {% include 'task_template.js' %}
-      </script>
     </div>
-  </body>
+
+    <script>
+        {% include 'task_template.js' %}
+
+
+
+
+    </script>
+</div>
+</body>
 </html>

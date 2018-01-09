@@ -38,6 +38,8 @@ function main() {
       });
 
       return Promise.resolve({
+        sentid: sentence.id,
+        senttokens: sentence.tokens,
         actions: actions,
         actionRelations: actionRelations
       });
