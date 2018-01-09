@@ -137,5 +137,5 @@ def prepare_hit(global_id, text, verb_spans, static_parameters):
     	question_html = generate_task_page(formatted_text)
     	return build_hit_params(question_html, static_parameters)
     else:
-        print "Debug: empty verb spans in:", text  
+        print("Debug: empty verb spans in:", text)
         return None

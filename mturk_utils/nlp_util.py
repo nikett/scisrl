@@ -45,7 +45,7 @@ def lemmatize_verb(unlemmatized_with_puncts):
                 lemma = lemmatizer.lemmatize(noun_verb_derivations_dict['verb'].get(lemma, lemma), 'v')
         return lemma
     except:
-        print "Exception while lemmatizing verb", unlemmatized_with_puncts
+        print("Exception while lemmatizing verb", unlemmatized_with_puncts)
         return lemma
 
 
@@ -178,7 +178,7 @@ def parse_input(sent_id, sent, csv_spans):
         try:
             verbs.append(json_resp_from(str.strip(verb_span), tokenized_sent))
         except:
-            print "This sentence:", sent, "has incorrect verb span range: ", csv_spans
+            print("This sentence:", sent, "has incorrect verb span range: ", csv_spans)
     data['verbs'] = verbs
     # the js code expect an obj and so
     # any attempt to use the dict directly fails with json.dumps(data)
