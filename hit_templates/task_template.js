@@ -1,6 +1,9 @@
 var UNDO_TOOLTIP = 'Re-enter answers for this verb.';
 var ACTION_SUBMIT_TOOLTIP = 'Submit answers for this action.';
 var SUBMIT_TOOLTIP = 'Answer all questions before submitting the HIT.';
+var NEXT_TOOLTIP = 'Submit answer and go to next question.';
+var INVALID_TOOLTIP = 'Question is invalid.';
+var NEXT_RELATION_TOOLTIP = 'Submit answer and go to next question.';
 
 function main() {
   var sentence = {{ sentence }};
@@ -407,11 +410,15 @@ function askActionRelationQuestion($parent, action1, action2) {
           .attr('class', 'answer')
           .text(relationText)
           .appendTo($relations);
+        $(this).tooltip('hide');
         $(this).remove();
 
         resolve(relation);
       })
-      .appendTo($container);
+      .attr('data-toggle', 'tooltip')
+      .attr('title', NEXT_RELATION_TOOLTIP)
+      .appendTo($container)
+      .tooltip();
   });
 }
 
@@ -529,7 +536,10 @@ function getSpan($container, tokens, takenIndices) {
         $form.remove();
         resolve([selected[0], selected[selected.length - 1] + 1]);
       })
-      .appendTo($submitButtons);
+      .attr('data-toggle', 'tooltip')
+      .attr('title', NEXT_TOOLTIP)
+      .appendTo($submitButtons)
+      .tooltip();
 
     $('<button>')
       .text('Invalid')
@@ -538,7 +548,10 @@ function getSpan($container, tokens, takenIndices) {
         $form.remove();
         resolve(null);
       })
-      .appendTo($submitButtons);
+      .attr('data-toggle', 'tooltip')
+      .attr('title', INVALID_TOOLTIP)
+      .appendTo($submitButtons)
+      .tooltip();
   });
 }
 
