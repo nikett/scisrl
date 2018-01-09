@@ -1,4 +1,5 @@
-main();
+var UNDO_TOOLTIP = 'Re-enter answers for this verb.';
+var ACTION_SUBMIT_TOOLTIP = 'Submit answers for this action.';
 
 function main() {
   var sentence = {{ sentence }};
@@ -45,8 +46,6 @@ function main() {
       });
     });
   }).then(function(answers) {
-    console.log(answers);
-
     var submitURL = getURLParam('turkSubmitTo') + '/mturk/externalSubmit';
 
     $('<hr>').appendTo($questions);
@@ -117,26 +116,50 @@ function askActionQuestionsForVerb($parent, sentence, verb) {
   var $container = $('<div>')
     .attr('id', verb.lemma)
     .appendTo($parent);
-  $('<h3>').text(verb.lemma)
+  var $verb = $('<h3>')
+    .text(verb.lemma)
+    .appendTo($container);
+  var $undoContainer = $('<span>')
+    .appendTo($verb);
+  var $questionsContainer = $('<div>')
     .appendTo($container);
 
-  var who, what, where, when, whereFrom, whereTo, input, output;
+  return askActionQuestionsForVerbWithUndo($questionsContainer, $undoContainer, sentence, verb);
+}
 
-  function complete() {
-    return Promise.resolve({
-      verb: verb,
-      questions: {
-        who: who,
-        what: what,
-        where: where,
-        when: when,
-        whereFrom: whereFrom,
-        whereTo: whereTo,
-        input: input,
-        output: output
-      }
-    });
-  }
+function askActionQuestionsForVerbWithUndo($questionsContainer, $undoContainer, sentence, verb) {
+  return Promise.race([
+    undoPromise($undoContainer),
+    actionQuestionsPromise($questionsContainer, sentence, verb)
+  ]).then(function(response) {
+    if (!response) {
+      $questionsContainer.empty();
+      $undoContainer.empty();
+      return askActionQuestionsForVerbWithUndo($questionsContainer, $undoContainer, sentence, verb);
+    }
+
+    $undoContainer.empty();
+    return Promise.resolve(response);
+  });
+}
+
+function undoPromise($parent) {
+  return new Promise(function(resolve, reject) {
+    $('<button>')
+      .text('Undo')
+      .attr('class', 'btn btn-warning undo-button')
+      .attr('data-toggle', 'tooltip')
+      .attr('title', UNDO_TOOLTIP)
+      .click(function() {
+        resolve();
+      })
+      .appendTo($parent)
+      .tooltip();
+  });
+}
+
+function actionQuestionsPromise($container, sentence, verb) {
+  var who, what, where, when, whereFrom, whereTo, input, output;
 
   return askSpanQuestion(
     $container,
@@ -248,14 +271,41 @@ function askActionQuestionsForVerb($parent, sentence, verb) {
         return Promise.resolve();
       });
     });
-  }).then(function() {
-    return complete();
   }).catch(function(error) {
     if (error) {
       return Promise.reject(error);
     }
 
-    return complete();
+    return Promise.resolve();
+  }).then(function() {
+    return new Promise(function(resolve, reject) {
+      $('<button>')
+        .text('Submit Action')
+        .attr('class', 'btn btn-success')
+        .attr('data-toggle', 'tooltip')
+        .attr('title', ACTION_SUBMIT_TOOLTIP)
+        .click(function() {
+          $(this).tooltip('hide');
+          $(this).remove();
+          resolve();
+        })
+        .appendTo($container)
+        .tooltip();
+    });
+  }).then(function() {
+    return Promise.resolve({
+      verb: verb,
+      questions: {
+        who: who,
+        what: what,
+        where: where,
+        when: when,
+        whereFrom: whereFrom,
+        whereTo: whereTo,
+        input: input,
+        output: output
+      }
+    });
   });
 }
 
@@ -263,7 +313,6 @@ function getTakenSpans(verbs, who, what) {
   var taken = verbs.map(function(verb) {
     return verb.span;
   });
-
 }
 
 function askYesNoQuestion($parent, text) {
@@ -393,7 +442,6 @@ function askSpanQuestion($container, text, tokens, takenSpans) {
         return _.range(span.span[0], span.span[1]);
       })
   );
-
 
   return getSpan($question, tokens, takenIndices).then(function(answerSpan) {
     var $answer = $('<span>')
@@ -570,3 +618,5 @@ function canonicalizeRelation(indices, relation) {
     relation: relationType
   };
 }
+
+main();

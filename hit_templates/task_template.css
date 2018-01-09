@@ -91,7 +91,7 @@ img {
     font-style: italic;
 }
 
-.yes-no-buttons > button {
+.yes-no-buttons > button, .undo-button {
     margin-left: 4px;
 }
 
