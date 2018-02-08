@@ -156,7 +156,7 @@ def past_form_of_verb(unlemmatized_with_puncts):
 
 def json_resp_from(verb_span, tokenized_sent):
     start, end = verb_span.split('-')
-    lemma = lemmatize_vp(' '.join(tokenized_sent[int(start): int(end)]))
+    lemma = lemmatize_vp(' '.join(tokenized_sent[int(start): int(end)])).lower()
 
     # if "stones and pips pass" in ' '.join(tokenized_sent):
     #     print "Niket debugging: ", ' '.join(tokenized_sent), "\n", \
