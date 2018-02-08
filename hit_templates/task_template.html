@@ -10,10 +10,9 @@
     <link href='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css' rel='stylesheet'>
     <style>
       {% include 'task_template.css' %}
-
-
-
-
+    </style>
+    <style>
+      {% include 'interactive_example.css' %}
     </style>
 </head>
 <body>
@@ -72,6 +71,17 @@
             prevents any other actions.</p>
 
         <hr>
+
+
+        <h1>To avoid rejections, make sure you are getting it right-- practice one hit here:</h1>
+        <div id="interactive-example">
+          <p class="question-header">
+            Animals grow fur to stay warm.
+          </p>
+        </div>
+
+        <hr>
+
         <h1>Guidelines.</h1>
         <ol>
             <li>For each action, highlight answer phrases by clicking/unclicking on words.
@@ -96,10 +106,10 @@
 
     <script>
         {% include 'task_template.js' %}
+    </script>
 
-
-
-
+    <script>
+        {% include 'interactive_example.js' %}
     </script>
 </div>
 </body>
