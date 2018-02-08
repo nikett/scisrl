@@ -7,7 +7,7 @@ from nltk.tokenize import sent_tokenize
 import PIL.Image as Image
 import requests
 from .nlp_util import parse_input
-
+from tqdm import tqdm
 
 from boto.mturk.qualification import PercentAssignmentsApprovedRequirement, Qualifications, Requirement, LocaleRequirement
 
@@ -71,11 +71,11 @@ def get_assignments(mturk_connection, reviewable_hits, status=None):
     Retrieves individual assignments associated with the specified HITs.
     :param mturk_connection: active mturk connection established by user in the nb.
     :param reviewable_hits: HITs to review
-    :param status: HIT status to filter by.
+    :param status: HIT status to filter by. 
     :return: hit_id:assignment dict
     """
     assignments = defaultdict(list)
-    for hit in reviewable_hits:
+    for hit in tqdm(reviewable_hits):
         assignment = mturk_connection.get_assignments(hit.HITId, status=status)
         assignments[hit.HITId].extend(assignment)
     return assignments
