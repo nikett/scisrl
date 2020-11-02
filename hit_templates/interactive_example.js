@@ -5,15 +5,15 @@ var Examples = [
     answers: [
       {
         answer: 'fur',
-        explanation: 'Your answer is wrong because Who question refers to the doer of the action, i.e., who was the one responsible to grow fur.'
+        explanation: 'Incorrect. Who question always refers to the doer of the action, i.e., who was the one responsible to grow fur.'
       },
       {
         answer: 'invalid',
-        explanation: 'This is answer is wrong because the sentence contains this information quite explicitly.'
+        explanation: 'Incorrect. The answer is explicitly present in the sentence.'
       },
       {
         answer: 'animals',
-        explanation: 'Your answer is right!',
+        explanation: 'Correct!',
         correct: true
       }
     ]
@@ -23,34 +23,30 @@ var Examples = [
     answers: [
       {
         answer: 'fur',
-        explanation: 'Your answer is right!',
+        explanation: 'Correct!',
         correct: true
       },
       {
         answer: 'invalid',
-        explanation: 'Your answer is wrong because the sentence contains this information quite explicitly.'
-      },
-      {
-        answer: 'animals',
-        explanation: 'Your answer is wrong because animals are the doer of the action.'
+        explanation: 'Incorrect. The answer is explicitly present in the sentence.'
       }
     ]
-  }, 
+  },
   {
     question: 'Where is fur grown?',
     answers: [
       {
         answer: 'skin of animal',
-        explanation: 'Your answer is wrong because Your answer text is not present in the sentence.',
+        explanation: 'Incorrect. This answer text is not present in the sentence.',
       },
       {
         answer: 'invalid',
-        explanation: 'Your answer is right! General tip for where question is, when possible include a preposition for location.',
+        explanation: 'Correct! General tip for where or when question: when possible include a preposition.',
         correct: true
       },
       {
         answer: 'keep warm',
-        explanation: 'Your answer is wrong because where question can ONLY be answered with a physical location.'
+        explanation: 'Incorrect. Where question can ONLY be answered with a physical location.'
       }
     ]
   },
@@ -59,34 +55,34 @@ var Examples = [
     answers: [
       {
         answer: 'fur',
-        explanation: 'Your answer is wrong because the answer to Who questions is a doer of the action.'
+        explanation: 'Incorrect. Who question always refers to the doer of the action.'
       },
       {
         answer: 'invalid',
-        explanation: 'Your answer is wrong because the sentence contains this information.'
+        explanation: 'Incorrect. The answer is explicitly present in the sentence.'
       },
       {
         answer: 'animals',
-        explanation: 'Your answer is right!',
+        explanation: 'Correct!',
         correct: true
       }
     ]
   },
    {
-    question: 'What do animals keeps warm?',
+    question: 'What do animals keep warm?',
     answers: [
       {
         answer: 'fur',
-        explanation: 'Your answer is wrong because it is possible actions can be intransitive.'
+        explanation: 'Incorrect. When actions are intransitive verbs, there may be no valid answer.'
       },
       {
         answer: 'invalid',
-        explanation: 'Your answer is right! Note that the questions can sound not grammatical, use your best judgement.',
+        explanation: 'Correct! Note: questions can sound ungrammatical, use your best judgement.',
         correct: true
       },
       {
         answer: 'skin of animal',
-        explanation: 'Your answer is wrong because Your answer text is not present in the sentence.'
+        explanation: 'Incorrect. This answer text is not present in the sentence.',
       }
     ]
   },
@@ -95,16 +91,16 @@ var Examples = [
     answers: [
       {
         answer: 'enables',
-        explanation: 'Your answer is right!',
+        explanation: 'Correct!',
         correct: true
       },
       {
         answer: 'prevents',
-        explanation: 'Your answer is wrong because growing fur enables animals to keep warm'
+        explanation: 'Incorrect. Growing fur enables animals to keep warm'
       },
       {
         answer: 'none',
-        explanation: 'Your answer is wrong there is a relation that can be derived from the sentence.'
+        explanation: 'Incorrect. A relation can be derived from the sentence.'
       }
     ]
   }
