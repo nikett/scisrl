@@ -1,4 +1,4 @@
-requests==2.18.4
+requests==2.20.0
 numpy==1.13.3
 Jinja2==2.10
 tqdm==4.19.4
