@@ -7,5 +7,5 @@ boto==2.48.0
 pandas==0.21.0
 nltk==3.2.5
 ipython==6.2.1
-Pillow==4.3.0
+Pillow==9.0.1
 python_dateutil==2.6.1
